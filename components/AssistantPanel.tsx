@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Bot, Send, Sparkles, ChevronDown, ChevronUp, Loader2 } from "lucide-react";
+import { Bot, Send, Sparkles, ChevronDown, ChevronUp, Loader2, X, MessageSquare } from "lucide-react";
 
 interface AssistantMessage {
   role: "user" | "assistant";
@@ -13,21 +13,25 @@ interface AssistantPanelProps {
   onSelectNode: (gid: number) => void;
   onHighlightGids: (gids: number[]) => void;
   selectedGid: number | null;
+  isOpen: boolean;
+  onToggle: () => void;
+  externalPrompt?: string | null;
 }
 
 export default function AssistantPanel({
   onSelectNode,
   onHighlightGids,
   selectedGid,
+  isOpen,
+  onToggle,
 }: AssistantPanelProps) {
-  const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [messages, setMessages] = useState<AssistantMessage[]>([
     {
       role: "assistant",
       content:
-        "Hello! I am your AML Graph Analyst Assistant. Ask me to investigate specific GIDs, examine cross-cluster coordinators, or identify consolidation structures.",
+        "👋 Welcome! I am your AML Graph Intelligence Assistant. You can ask me to analyze high-risk targets, explain cluster bridges, or evaluate specific accounts.",
     },
   ]);
 
@@ -79,81 +83,99 @@ export default function AssistantPanel({
   };
 
   return (
-    <div className="fixed bottom-0 right-80 w-[480px] max-w-[calc(100vw-22rem)] z-30 transition-all">
-      {/* Collapsed Bar / Header */}
-      <div
-        onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center justify-between p-3 rounded-t-2xl glass-panel bg-slate-900/95 cursor-pointer hover:bg-slate-800/95 transition shadow-2xl border-b-0"
-      >
-        <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-purple-600 to-cyan-500 flex items-center justify-center text-white shadow-md">
-            <Bot className="w-4 h-4" />
-          </div>
-          <div>
-            <div className="text-xs font-bold text-slate-100 flex items-center gap-1.5">
-              AML AI Assistant
-              <span className="text-[10px] font-normal px-1.5 py-0.2 rounded bg-purple-950 text-purple-300 border border-purple-800">
-                GPT / NIM
-              </span>
-            </div>
-            <div className="text-[10px] text-slate-400">
-              Interactive hypothesis & counterparty analysis
-            </div>
-          </div>
-        </div>
-
-        <button className="text-slate-400 hover:text-slate-200 p-1">
-          {isOpen ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
+    <>
+      {/* Floating Trigger Button (Bottom-Right) */}
+      {!isOpen && (
+        <button
+          onClick={onToggle}
+          className="fixed bottom-6 right-6 py-2.5 px-4 rounded-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-medium text-xs shadow-2xl flex items-center gap-2.5 border border-purple-400/30 transition transform hover:scale-105 z-40"
+        >
+          <Bot className="w-4 h-4 text-purple-200" />
+          <span>Ask AML Assistant</span>
+          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
         </button>
-      </div>
+      )}
 
       {/* Expanded Chat Drawer */}
       {isOpen && (
-        <div className="h-80 flex flex-col glass-panel bg-slate-950/95 border-t-0 p-3 text-xs shadow-2xl">
-          {/* Quick Prompt Chips */}
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-2 scrollbar-none">
+        <div className="fixed bottom-6 right-6 w-96 max-w-[calc(100vw-3rem)] h-[480px] flex flex-col rounded-2xl glass-panel bg-slate-950/95 border border-slate-700/80 shadow-2xl z-40 overflow-hidden text-xs">
+          {/* Header */}
+          <div className="p-3.5 border-b border-slate-800 bg-slate-900/80 flex items-center justify-between shrink-0">
+            <div className="flex items-center gap-2.5">
+              <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-purple-600 to-cyan-500 flex items-center justify-center text-white shadow-md">
+                <Bot className="w-4 h-4" />
+              </div>
+              <div>
+                <div className="font-bold text-slate-100 flex items-center gap-1.5">
+                  AML AI Assistant
+                  <span className="text-[10px] font-normal px-1.5 py-0.2 rounded bg-purple-950 text-purple-300 border border-purple-800">
+                    Online
+                  </span>
+                </div>
+                <div className="text-[10px] text-slate-400">
+                  Transaction & network investigator
+                </div>
+              </div>
+            </div>
+
             <button
-              onClick={() => handleSend("Analyze top coordinator nodes and their cross-cluster bridges")}
-              className="px-2 py-1 rounded-md bg-slate-900 border border-slate-800 hover:border-slate-700 text-slate-300 whitespace-nowrap text-[11px] flex items-center gap-1"
+              onClick={onToggle}
+              className="p-1 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+
+          {/* Quick Prompt Chips */}
+          <div className="p-2.5 bg-slate-900/50 border-b border-slate-800/80 flex items-center gap-1.5 overflow-x-auto shrink-0 scrollbar-none">
+            <button
+              onClick={() => handleSend("Identify the top 5 highest priority targets for immediate AML review")}
+              className="px-2 py-1 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300 whitespace-nowrap text-[11px] flex items-center gap-1 transition"
+            >
+              <Sparkles className="w-3 h-3 text-amber-400" /> Top Targets
+            </button>
+            <button
+              onClick={() => handleSend("Explain the coordinator nodes bridging multiple clusters")}
+              className="px-2 py-1 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300 whitespace-nowrap text-[11px] flex items-center gap-1 transition"
             >
               <Sparkles className="w-3 h-3 text-purple-400" /> Coordinators
             </button>
             <button
-              onClick={() => handleSend("Identify consolidators pooling funds with low pass-through")}
-              className="px-2 py-1 rounded-md bg-slate-900 border border-slate-800 hover:border-slate-700 text-slate-300 whitespace-nowrap text-[11px] flex items-center gap-1"
+              onClick={() => handleSend("Find accounts acting as fund consolidators with low pass-through")}
+              className="px-2 py-1 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300 whitespace-nowrap text-[11px] flex items-center gap-1 transition"
             >
-              <Sparkles className="w-3 h-3 text-amber-400" /> Consolidators
+              <Sparkles className="w-3 h-3 text-cyan-400" /> Consolidators
             </button>
             {selectedGid && (
               <button
-                onClick={() => handleSend(`Analyze node GID ${selectedGid} and its counterparties`)}
-                className="px-2 py-1 rounded-md bg-purple-950/70 border border-purple-800 text-purple-200 whitespace-nowrap text-[11px] flex items-center gap-1 font-mono"
+                onClick={() => handleSend(`Analyze account GID ${selectedGid} and its direct money flow network`)}
+                className="px-2 py-1 rounded-md bg-purple-950 text-purple-200 border border-purple-800 whitespace-nowrap text-[11px] font-mono"
               >
-                Inspect #{selectedGid}
+                Inspect #{String(selectedGid).slice(-6)}
               </button>
             )}
           </div>
 
-          {/* Messages Feed */}
-          <div className="flex-1 overflow-y-auto space-y-2.5 pr-1">
+          {/* Messages Body */}
+          <div className="flex-1 overflow-y-auto p-3 space-y-2.5 pr-2">
             {messages.map((m, i) => (
               <div
                 key={i}
-                className={`p-2.5 rounded-xl ${
+                className={`p-3 rounded-xl leading-relaxed ${
                   m.role === "user"
-                    ? "bg-slate-800/90 text-slate-100 ml-8 border border-slate-700/60"
-                    : "bg-slate-900/80 text-slate-200 mr-4 border border-slate-800/80"
+                    ? "bg-slate-800/90 text-slate-100 ml-6 border border-slate-700/60"
+                    : "bg-slate-900/90 text-slate-200 mr-2 border border-slate-800/80"
                 }`}
               >
-                <div className="text-[10px] font-bold text-slate-400 mb-1">
-                  {m.role === "user" ? "Analyst" : "AML Assistant"}
+                <div className="text-[10px] font-bold text-slate-400 mb-1 flex items-center gap-1">
+                  {m.role === "user" ? "Analyst" : "Assistant"}
                 </div>
-                <div className="whitespace-pre-wrap leading-relaxed">{m.content}</div>
+                <div className="whitespace-pre-wrap text-xs">{m.content}</div>
 
-                {/* Highlighted GIDs Chips */}
+                {/* Clickable GIDs */}
                 {m.mentioned_gids && m.mentioned_gids.length > 0 && (
-                  <div className="flex flex-wrap gap-1 mt-2 pt-2 border-t border-slate-800">
-                    <span className="text-[10px] text-slate-400 self-center">Focus on graph:</span>
+                  <div className="flex flex-wrap gap-1 mt-2.5 pt-2 border-t border-slate-800">
+                    <span className="text-[10px] text-slate-400 self-center">Focus Account:</span>
                     {m.mentioned_gids.map((gid) => (
                       <button
                         key={gid}
@@ -170,37 +192,37 @@ export default function AssistantPanel({
             {loading && (
               <div className="flex items-center gap-2 text-slate-400 text-xs p-2">
                 <Loader2 className="w-4 h-4 animate-spin text-cyan-400" />
-                Analyzing graph neighborhood...
+                Querying graph intelligence...
               </div>
             )}
           </div>
 
-          {/* Input Box */}
+          {/* Input Footer */}
           <form
             onSubmit={(e) => {
               e.preventDefault();
               handleSend();
             }}
-            className="flex items-center gap-2 pt-2 border-t border-slate-800"
+            className="p-2.5 border-t border-slate-800 bg-slate-900/70 flex items-center gap-2 shrink-0"
           >
             <input
               type="text"
-              placeholder="Ask assistant about nodes, flows, or GIDs..."
+              placeholder="Ask a question about accounts or flows..."
               value={input}
               onChange={(e) => setInput(e.target.value)}
               disabled={loading}
-              className="flex-1 px-3 py-1.5 text-xs bg-slate-900/80 border border-slate-700/80 rounded-lg text-slate-200 placeholder-slate-500 focus:outline-none focus:border-purple-500 transition"
+              className="flex-1 px-3 py-1.5 text-xs bg-slate-950 border border-slate-700 rounded-lg text-slate-200 placeholder-slate-500 focus:outline-none focus:border-purple-500 transition"
             />
             <button
               type="submit"
               disabled={loading || !input.trim()}
-              className="p-2 rounded-lg bg-gradient-to-r from-purple-600 to-cyan-600 text-white disabled:opacity-40 transition"
+              className="p-2 rounded-lg bg-purple-600 hover:bg-purple-500 text-white disabled:opacity-40 transition"
             >
               <Send className="w-3.5 h-3.5" />
             </button>
           </form>
         </div>
       )}
-    </div>
+    </>
   );
 }

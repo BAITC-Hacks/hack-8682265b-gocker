@@ -1,7 +1,17 @@
 "use client";
 
 import React, { useRef, useEffect, useState, useMemo, useCallback } from "react";
-import { ZoomIn, ZoomOut, RotateCcw, Filter, Eye, Layers } from "lucide-react";
+import {
+  ZoomIn,
+  ZoomOut,
+  RotateCcw,
+  Sparkles,
+  Layers,
+  Filter,
+  Eye,
+  Info,
+  X,
+} from "lucide-react";
 
 export interface GraphNode {
   id: string;
@@ -22,8 +32,6 @@ export interface GraphNode {
   truncated_by_depth: boolean;
   x?: number;
   y?: number;
-  vx?: number;
-  vy?: number;
 }
 
 export interface GraphEdge {
@@ -42,15 +50,48 @@ interface GraphViewProps {
   highlightedGids: number[];
   onSelectNode: (gid: number) => void;
   activeRoleFilter: string | null;
+  onSetRoleFilter: (role: string | null) => void;
+  activeClusterFilter: number | null;
+  onClearClusterFilter: () => void;
 }
 
-export const ROLE_COLORS: Record<string, { bg: string; border: string; label: string }> = {
-  coordinator: { bg: "#9333ea", border: "#c084fc", label: "Coordinator" },
-  consolidator: { bg: "#f59e0b", border: "#fde68a", label: "Consolidator" },
-  distributor: { bg: "#06b6d4", border: "#67e8f9", label: "Distributor" },
-  transit: { bg: "#10b981", border: "#6ee7b7", label: "Transit" },
-  terminal: { bg: "#ef4444", border: "#fca5a5", label: "Terminal" },
-  peripheral: { bg: "#64748b", border: "#94a3b8", label: "Peripheral" },
+export const ROLE_COLORS: Record<string, { bg: string; border: string; label: string; desc: string }> = {
+  coordinator: {
+    bg: "#9333ea",
+    border: "#c084fc",
+    label: "Coordinator",
+    desc: "Key bridge account routing funds across multiple clusters",
+  },
+  consolidator: {
+    bg: "#f59e0b",
+    border: "#fde68a",
+    label: "Consolidator",
+    desc: "Collects from 8+ sources with low forward distribution",
+  },
+  distributor: {
+    bg: "#06b6d4",
+    border: "#67e8f9",
+    label: "Distributor",
+    desc: "Disburses funds outward to 15+ recipients",
+  },
+  transit: {
+    bg: "#10b981",
+    border: "#6ee7b7",
+    label: "Transit",
+    desc: "Pass-through intermediary (80–120% pass-through)",
+  },
+  terminal: {
+    bg: "#ef4444",
+    border: "#fca5a5",
+    label: "Terminal",
+    desc: "Final endpoint account with 0 outgoing transfers",
+  },
+  peripheral: {
+    bg: "#64748b",
+    border: "#94a3b8",
+    label: "Peripheral",
+    desc: "Low-volume background flow nodes",
+  },
 };
 
 export default function GraphView({
@@ -60,36 +101,42 @@ export default function GraphView({
   highlightedGids,
   onSelectNode,
   activeRoleFilter,
+  onSetRoleFilter,
+  activeClusterFilter,
+  onClearClusterFilter,
 }: GraphViewProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
-  const [transform, setTransform] = useState({ x: 0, y: 0, k: 0.85 });
+  const [transform, setTransform] = useState({ x: 0, y: 0, k: 0.75 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [hoveredNode, setHoveredNode] = useState<GraphNode | null>(null);
   const [tooltipPos, setTooltipPos] = useState<{ x: number; y: number } | null>(null);
+  const [viewMode, setViewMode] = useState<"key_actors" | "full">("key_actors");
 
-  // Adjacency lookup for fast neighborhood calculation
-  const adjacency = useMemo(() => {
-    const adj = new Map<number, Set<number>>();
-    for (const e of edges) {
-      const u = Number(e.source);
-      const v = Number(e.target);
-      if (!adj.has(u)) adj.set(u, new Set());
-      if (!adj.has(v)) adj.set(v, new Set());
-      adj.get(u)!.add(v);
-      adj.get(v)!.add(u);
-    }
-    return adj;
-  }, [edges]);
+  // Filter nodes based on view mode (Key actors vs full network)
+  const displayNodes = useMemo(() => {
+    if (viewMode === "full") return nodes;
+    return nodes.filter(
+      (n) =>
+        n.role === "coordinator" ||
+        n.role === "consolidator" ||
+        n.role === "distributor" ||
+        n.is_seed ||
+        n.priority_score >= 0.2
+    );
+  }, [nodes, viewMode]);
 
-  // Compute 2D positions for nodes grouped by cluster and component
+  const displayGidSet = useMemo(() => {
+    return new Set(displayNodes.map((n) => n.gid));
+  }, [displayNodes]);
+
+  // Position nodes by cluster layout
   const positionedNodes = useMemo(() => {
-    if (nodes.length === 0) return [];
+    if (displayNodes.length === 0) return [];
 
-    // Group nodes by cluster
     const clusterMap = new Map<number, GraphNode[]>();
-    for (const node of nodes) {
+    for (const node of displayNodes) {
       const c = node.cluster_id;
       if (!clusterMap.has(c)) clusterMap.set(c, []);
       clusterMap.get(c)!.push({ ...node });
@@ -97,8 +144,8 @@ export default function GraphView({
 
     const clusters = Array.from(clusterMap.entries());
     const nClusters = clusters.length;
-    const gridCols = Math.ceil(Math.sqrt(nClusters * 1.5));
-    const clusterSpacing = 550;
+    const gridCols = Math.ceil(Math.sqrt(nClusters * 1.5)) || 1;
+    const clusterSpacing = viewMode === "key_actors" ? 420 : 540;
 
     const result: GraphNode[] = [];
 
@@ -114,10 +161,9 @@ export default function GraphView({
         cNodes[0].y = cy;
         result.push(cNodes[0]);
       } else {
-        const radius = Math.min(220, 25 + Math.sqrt(n) * 22);
+        const radius = Math.min(220, 30 + Math.sqrt(n) * 24);
         cNodes.forEach((node, i) => {
-          // Put high priority nodes closer to cluster center
-          const r = radius * (1 - Math.min(0.6, node.priority_score * 0.8));
+          const r = radius * (1 - Math.min(0.65, node.priority_score * 0.7));
           const angle = (i / n) * 2 * Math.PI;
           node.x = cx + r * Math.cos(angle);
           node.y = cy + r * Math.sin(angle);
@@ -127,9 +173,8 @@ export default function GraphView({
     });
 
     return result;
-  }, [nodes]);
+  }, [displayNodes, viewMode]);
 
-  // Fast map from GID to node
   const nodeMap = useMemo(() => {
     const map = new Map<number, GraphNode>();
     for (const n of positionedNodes) {
@@ -138,7 +183,20 @@ export default function GraphView({
     return map;
   }, [positionedNodes]);
 
-  // Active neighborhood when a node is selected
+  // Adjacency
+  const adjacency = useMemo(() => {
+    const adj = new Map<number, Set<number>>();
+    for (const e of edges) {
+      const u = Number(e.source);
+      const v = Number(e.target);
+      if (!adj.has(u)) adj.set(u, new Set());
+      if (!adj.has(v)) adj.set(v, new Set());
+      adj.get(u)!.add(v);
+      adj.get(v)!.add(u);
+    }
+    return adj;
+  }, [edges]);
+
   const activeNeighborhood = useMemo(() => {
     const set = new Set<number>();
     if (selectedGid !== null) {
@@ -154,34 +212,34 @@ export default function GraphView({
     return set;
   }, [selectedGid, highlightedGids, adjacency]);
 
-  // Center on selected node if selected externally
+  // Center on selected node
   useEffect(() => {
     if (selectedGid !== null) {
       const target = nodeMap.get(selectedGid);
       if (target && target.x !== undefined && target.y !== undefined) {
         const canvas = canvasRef.current;
         if (!canvas) return;
-        const width = canvas.width / (window.devicePixelRatio || 1);
-        const height = canvas.height / (window.devicePixelRatio || 1);
+        const width = canvas.clientWidth;
+        const height = canvas.clientHeight;
         setTransform({
-          x: width / 2 - target.x * 1.4,
-          y: height / 2 - target.y * 1.4,
-          k: 1.4,
+          x: width / 2 - target.x * 1.3,
+          y: height / 2 - target.y * 1.3,
+          k: 1.3,
         });
       }
     }
   }, [selectedGid, nodeMap]);
 
-  // Initial center of canvas
+  // Initial center
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const width = canvas.clientWidth;
     const height = canvas.clientHeight;
-    setTransform({ x: width / 2, y: height / 2, k: 0.45 });
-  }, []);
+    setTransform({ x: width / 2, y: height / 2, k: viewMode === "key_actors" ? 0.8 : 0.45 });
+  }, [viewMode]);
 
-  // Main Canvas Render Loop
+  // Render Loop
   const render = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -201,7 +259,6 @@ export default function GraphView({
     ctx.scale(dpr, dpr);
     ctx.clearRect(0, 0, width, height);
 
-    // Apply viewport transform
     ctx.translate(transform.x, transform.y);
     ctx.scale(transform.k, transform.k);
 
@@ -209,22 +266,25 @@ export default function GraphView({
 
     // Draw Edges
     for (const edge of edges) {
-      const u = nodeMap.get(Number(edge.source));
-      const v = nodeMap.get(Number(edge.target));
+      const uId = Number(edge.source);
+      const vId = Number(edge.target);
+      const u = nodeMap.get(uId);
+      const v = nodeMap.get(vId);
+
       if (!u || !v || u.x === undefined || u.y === undefined || v.x === undefined || v.y === undefined) {
         continue;
       }
 
-      // Check role filter
+      if (activeClusterFilter !== null && u.cluster_id !== activeClusterFilter && v.cluster_id !== activeClusterFilter) {
+        continue;
+      }
+
       if (activeRoleFilter && u.role !== activeRoleFilter && v.role !== activeRoleFilter) {
         continue;
       }
 
-      const isConnectedToSelected =
-        selectedGid !== null && (u.gid === selectedGid || v.gid === selectedGid);
-      const isNeighborEdge =
-        hasHighlight && activeNeighborhood.has(u.gid) && activeNeighborhood.has(v.gid);
-
+      const isConnectedToSelected = selectedGid !== null && (u.gid === selectedGid || v.gid === selectedGid);
+      const isNeighborEdge = hasHighlight && activeNeighborhood.has(u.gid) && activeNeighborhood.has(v.gid);
       const logVol = Math.max(1, Math.min(5, Math.log10(Math.max(1000, edge.sum_kzt)) - 3));
 
       ctx.beginPath();
@@ -233,31 +293,31 @@ export default function GraphView({
 
       if (isConnectedToSelected) {
         ctx.strokeStyle = u.gid === selectedGid ? "#f59e0b" : "#38bdf8";
-        ctx.lineWidth = Math.max(2, logVol * 1.5) / transform.k;
+        ctx.lineWidth = Math.max(2.2, logVol * 1.5) / transform.k;
         ctx.globalAlpha = 0.95;
       } else if (isNeighborEdge) {
         ctx.strokeStyle = "#94a3b8";
         ctx.lineWidth = Math.max(1.2, logVol) / transform.k;
-        ctx.globalAlpha = 0.65;
+        ctx.globalAlpha = 0.7;
       } else if (hasHighlight) {
         ctx.strokeStyle = "#1e293b";
-        ctx.lineWidth = 0.6 / transform.k;
+        ctx.lineWidth = 0.5 / transform.k;
         ctx.globalAlpha = 0.08;
       } else {
         ctx.strokeStyle = "#334155";
         ctx.lineWidth = Math.max(0.6, logVol * 0.7) / transform.k;
-        ctx.globalAlpha = 0.22;
+        ctx.globalAlpha = 0.25;
       }
 
       ctx.stroke();
 
-      // Draw directional arrow on important edges
-      if (isConnectedToSelected || (!hasHighlight && transform.k > 0.8)) {
+      // Flow arrows
+      if (isConnectedToSelected || (!hasHighlight && transform.k > 0.7)) {
         const dx = v.x - u.x;
         const dy = v.y - u.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
         if (dist > 25) {
-          const arrowDist = dist * 0.6;
+          const arrowDist = dist * 0.58;
           const ax = u.x + (dx / dist) * arrowDist;
           const ay = u.y + (dy / dist) * arrowDist;
           const angle = Math.atan2(dy, dx);
@@ -284,12 +344,16 @@ export default function GraphView({
     for (const node of positionedNodes) {
       if (node.x === undefined || node.y === undefined) continue;
 
+      if (activeClusterFilter !== null && node.cluster_id !== activeClusterFilter) {
+        continue;
+      }
+
       const isSelected = node.gid === selectedGid;
       const isNeighbor = activeNeighborhood.has(node.gid);
       const isFiltered = activeRoleFilter !== null && node.role !== activeRoleFilter;
 
-      let radius = 3 + node.priority_score * 8;
-      if (node.is_seed) radius += 2;
+      let radius = 3.5 + node.priority_score * 8;
+      if (node.is_seed) radius += 2.5;
       if (isSelected) radius += 4;
 
       const color = ROLE_COLORS[node.role] || ROLE_COLORS.peripheral;
@@ -313,7 +377,6 @@ export default function GraphView({
         ctx.strokeStyle = color.bg;
         ctx.stroke();
 
-        // Pulsing outer halo
         ctx.beginPath();
         ctx.arc(node.x, node.y, (radius + 6) / transform.k, 0, 2 * Math.PI);
         ctx.strokeStyle = "rgba(255, 255, 255, 0.4)";
@@ -324,7 +387,7 @@ export default function GraphView({
         ctx.globalAlpha = 1.0;
         ctx.fill();
 
-        ctx.lineWidth = 2 / transform.k;
+        ctx.lineWidth = 2.5 / transform.k;
         ctx.strokeStyle = color.border;
         ctx.stroke();
       } else if (hasHighlight) {
@@ -336,15 +399,15 @@ export default function GraphView({
         ctx.globalAlpha = 0.85;
         ctx.fill();
 
-        if (node.priority_score > 0.4 || node.is_seed) {
+        if (node.priority_score > 0.3 || node.is_seed) {
           ctx.lineWidth = 1.5 / transform.k;
           ctx.strokeStyle = node.is_seed ? "#38bdf8" : color.border;
           ctx.stroke();
         }
       }
 
-      // Draw label for high priority or selected nodes when zoomed in
-      if ((isSelected || isNeighbor || (transform.k > 1.2 && node.priority_score > 0.45))) {
+      // Labels
+      if (isSelected || isNeighbor || (transform.k > 1.0 && node.priority_score > 0.35) || (viewMode === "key_actors" && transform.k > 0.6)) {
         ctx.globalAlpha = isSelected ? 1.0 : 0.85;
         ctx.font = `${Math.max(10, 11 / transform.k)}px sans-serif`;
         ctx.fillStyle = isSelected ? "#f8fafc" : "#cbd5e1";
@@ -362,6 +425,8 @@ export default function GraphView({
     selectedGid,
     activeNeighborhood,
     activeRoleFilter,
+    activeClusterFilter,
+    viewMode,
   ]);
 
   useEffect(() => {
@@ -373,7 +438,7 @@ export default function GraphView({
     return () => cancelAnimationFrame(animationId);
   }, [render]);
 
-  // Mouse Handlers for Pan, Zoom & Click
+  // Handlers
   const handleWheel = (e: React.WheelEvent) => {
     e.preventDefault();
     const rect = canvasRef.current?.getBoundingClientRect();
@@ -381,7 +446,6 @@ export default function GraphView({
 
     const mouseX = e.clientX - rect.left;
     const mouseY = e.clientY - rect.top;
-
     const zoomFactor = e.deltaY < 0 ? 1.15 : 0.85;
     const newK = Math.max(0.15, Math.min(5.0, transform.k * zoomFactor));
 
@@ -408,7 +472,6 @@ export default function GraphView({
         y: e.clientY - dragStart.y,
       }));
     } else {
-      // Find hovered node
       const mouseX = (e.clientX - rect.left - transform.x) / transform.k;
       const mouseY = (e.clientY - rect.top - transform.y) / transform.k;
 
@@ -420,7 +483,7 @@ export default function GraphView({
         const dy = n.y - mouseY;
         const dist = Math.sqrt(dx * dx + dy * dy);
         const radius = (6 + n.priority_score * 8) / transform.k;
-        if (dist <= Math.max(radius, 12 / transform.k)) {
+        if (dist <= Math.max(radius, 14 / transform.k)) {
           found = n;
           break;
         }
@@ -435,10 +498,8 @@ export default function GraphView({
     }
   };
 
-  const handleMouseUp = (e: React.MouseEvent) => {
-    if (isDragging) {
-      setIsDragging(false);
-    }
+  const handleMouseUp = () => {
+    if (isDragging) setIsDragging(false);
   };
 
   const handleClick = (e: React.MouseEvent) => {
@@ -464,6 +525,81 @@ export default function GraphView({
 
   return (
     <div className="relative w-full h-full bg-[#080d19] overflow-hidden select-none">
+      {/* Top Banner Filter & View Mode Controls */}
+      <div className="absolute top-4 left-4 right-16 flex flex-wrap items-center justify-between gap-3 z-10 pointer-events-none">
+        {/* View Mode Toggle */}
+        <div className="pointer-events-auto flex items-center p-1 rounded-xl bg-slate-900/90 backdrop-blur-md border border-slate-800 shadow-xl">
+          <button
+            onClick={() => setViewMode("key_actors")}
+            className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition flex items-center gap-1.5 ${
+              viewMode === "key_actors"
+                ? "bg-purple-600 text-white shadow-md"
+                : "text-slate-400 hover:text-slate-200"
+            }`}
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            Key Actors Only ({nodes.filter((n) => n.role === "coordinator" || n.role === "consolidator" || n.role === "distributor" || n.is_seed).length})
+          </button>
+          <button
+            onClick={() => setViewMode("full")}
+            className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition flex items-center gap-1.5 ${
+              viewMode === "full"
+                ? "bg-cyan-600 text-white shadow-md"
+                : "text-slate-400 hover:text-slate-200"
+            }`}
+          >
+            <Layers className="w-3.5 h-3.5" />
+            Full Network ({nodes.length})
+          </button>
+        </div>
+
+        {/* Role Quick Filters */}
+        <div className="pointer-events-auto hidden md:flex items-center gap-1.5 p-1 rounded-xl bg-slate-900/90 backdrop-blur-md border border-slate-800 shadow-xl text-xs">
+          <button
+            onClick={() => onSetRoleFilter(null)}
+            className={`px-2.5 py-1 rounded-lg transition font-medium ${
+              activeRoleFilter === null
+                ? "bg-slate-800 text-white font-semibold"
+                : "text-slate-400 hover:text-slate-200"
+            }`}
+          >
+            All Roles
+          </button>
+          {Object.entries(ROLE_COLORS).map(([r, c]) => (
+            <button
+              key={r}
+              onClick={() => onSetRoleFilter(activeRoleFilter === r ? null : r)}
+              className={`px-2.5 py-1 rounded-lg transition font-medium flex items-center gap-1.5 ${
+                activeRoleFilter === r
+                  ? "bg-slate-800 text-white font-semibold ring-1 ring-slate-600"
+                  : "text-slate-400 hover:text-slate-200"
+              }`}
+            >
+              <span
+                className="w-2 h-2 rounded-full"
+                style={{ backgroundColor: c.bg }}
+              />
+              <span className="capitalize">{r}</span>
+            </button>
+          ))}
+        </div>
+
+        {/* Cluster Filter Badge (if focused from Cluster Explorer) */}
+        {activeClusterFilter !== null && (
+          <div className="pointer-events-auto flex items-center gap-2 px-3 py-1 rounded-xl bg-indigo-950/90 border border-indigo-700 text-indigo-200 text-xs shadow-xl">
+            <span>Focused on Cluster #{activeClusterFilter}</span>
+            <button
+              onClick={onClearClusterFilter}
+              className="p-0.5 rounded hover:bg-indigo-900 transition"
+              title="Clear Cluster Filter"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Main Canvas */}
       <canvas
         ref={canvasRef}
         className="w-full h-full cursor-grab active:cursor-grabbing"
@@ -483,7 +619,7 @@ export default function GraphView({
               k: Math.min(5.0, prev.k * 1.25),
             }))
           }
-          className="p-2.5 rounded-lg bg-slate-900/80 border border-slate-700/60 text-slate-200 hover:text-white hover:bg-slate-800 transition"
+          className="p-2.5 rounded-lg bg-slate-900/90 border border-slate-800 text-slate-200 hover:text-white hover:bg-slate-800 transition shadow-lg"
           title="Zoom In"
         >
           <ZoomIn className="w-4 h-4" />
@@ -495,7 +631,7 @@ export default function GraphView({
               k: Math.max(0.15, prev.k * 0.8),
             }))
           }
-          className="p-2.5 rounded-lg bg-slate-900/80 border border-slate-700/60 text-slate-200 hover:text-white hover:bg-slate-800 transition"
+          className="p-2.5 rounded-lg bg-slate-900/90 border border-slate-800 text-slate-200 hover:text-white hover:bg-slate-800 transition shadow-lg"
           title="Zoom Out"
         >
           <ZoomOut className="w-4 h-4" />
@@ -507,31 +643,33 @@ export default function GraphView({
               setTransform({
                 x: canvas.clientWidth / 2,
                 y: canvas.clientHeight / 2,
-                k: 0.45,
+                k: viewMode === "key_actors" ? 0.8 : 0.45,
               });
             }
           }}
-          className="p-2.5 rounded-lg bg-slate-900/80 border border-slate-700/60 text-slate-200 hover:text-white hover:bg-slate-800 transition"
+          className="p-2.5 rounded-lg bg-slate-900/90 border border-slate-800 text-slate-200 hover:text-white hover:bg-slate-800 transition shadow-lg"
           title="Reset View"
         >
           <RotateCcw className="w-4 h-4" />
         </button>
       </div>
 
-      {/* Legend & Stats Overlay */}
-      <div className="absolute bottom-4 left-4 p-3 rounded-xl bg-slate-900/85 backdrop-blur-md border border-slate-800 text-xs shadow-xl z-10 max-w-sm">
+      {/* Legend & Help Box */}
+      <div className="absolute bottom-4 left-4 p-3 rounded-xl bg-slate-900/90 backdrop-blur-md border border-slate-800 text-xs shadow-xl z-10 max-w-sm">
         <div className="flex items-center justify-between mb-2 text-slate-400 font-medium">
-          <span>ROLE LEGEND ({nodes.length} nodes)</span>
-          <span className="text-[10px] text-slate-500">Scroll to zoom • Click node</span>
+          <span>ROLE LEGEND ({displayNodes.length} visible)</span>
+          <span className="text-[10px] text-slate-500">Scroll zoom • Drag pan</span>
         </div>
         <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
           {Object.entries(ROLE_COLORS).map(([role, c]) => (
-            <div key={role} className="flex items-center gap-2">
+            <div key={role} className="flex items-center gap-2 group cursor-pointer" onClick={() => onSetRoleFilter(activeRoleFilter === role ? null : role)}>
               <span
-                className="w-2.5 h-2.5 rounded-full"
+                className="w-2.5 h-2.5 rounded-full shrink-0"
                 style={{ backgroundColor: c.bg, border: `1px solid ${c.border}` }}
               />
-              <span className="text-slate-300 capitalize">{c.label}</span>
+              <span className="text-slate-300 capitalize truncate group-hover:text-white">
+                {c.label}
+              </span>
             </div>
           ))}
         </div>
@@ -540,28 +678,38 @@ export default function GraphView({
       {/* Hover Tooltip */}
       {hoveredNode && tooltipPos && (
         <div
-          className="absolute pointer-events-none p-3 rounded-lg bg-slate-950/95 border border-slate-700/80 text-xs shadow-2xl z-30 transform -translate-x-1/2 -translate-y-full mb-3"
+          className="absolute pointer-events-none p-3.5 rounded-xl bg-slate-950/95 border border-slate-700/80 text-xs shadow-2xl z-30 transform -translate-x-1/2 -translate-y-full mb-3"
           style={{ left: tooltipPos.x, top: tooltipPos.y }}
         >
-          <div className="flex items-center gap-2 mb-1">
+          <div className="flex items-center gap-2 mb-1.5">
             <span
-              className="w-2 h-2 rounded-full"
+              className="w-2.5 h-2.5 rounded-full"
               style={{
                 backgroundColor: ROLE_COLORS[hoveredNode.role]?.bg || "#64748b",
               }}
             />
-            <span className="font-semibold text-slate-100">
+            <span className="font-bold text-slate-100 font-mono">
               GID: {hoveredNode.gid}
             </span>
-            <span className="px-1.5 py-0.5 rounded text-[10px] uppercase font-bold bg-slate-800 text-slate-300">
+            <span className="px-1.5 py-0.2 rounded text-[10px] uppercase font-bold bg-slate-800 text-slate-300">
               {hoveredNode.role}
             </span>
           </div>
-          <div className="text-[11px] text-slate-400 space-y-0.5">
-            <div>Priority Score: <span className="text-amber-400 font-semibold">{hoveredNode.priority_score.toFixed(3)}</span></div>
-            <div>Inflow: <span className="text-emerald-400 font-medium">{hoveredNode.in_kzt.toLocaleString()} KZT</span> ({hoveredNode.in_deg} payers)</div>
-            <div>Outflow: <span className="text-cyan-400 font-medium">{hoveredNode.out_kzt.toLocaleString()} KZT</span> ({hoveredNode.out_deg} recipients)</div>
-            <div>Cluster: #{hoveredNode.cluster_id} {hoveredNode.is_seed ? "• (Seed Client)" : ""}</div>
+
+          <div className="text-[11px] text-slate-300 space-y-1">
+            <div>
+              Priority Score:{" "}
+              <span className="text-amber-400 font-bold font-mono">
+                {hoveredNode.priority_score.toFixed(3)}
+              </span>
+            </div>
+            <div>
+              Flow: <span className="text-emerald-400 font-mono">+{hoveredNode.in_kzt.toLocaleString()}</span> in /{" "}
+              <span className="text-cyan-400 font-mono">-{hoveredNode.out_kzt.toLocaleString()}</span> out
+            </div>
+            <div className="text-slate-400 text-[10px] pt-1 border-t border-slate-800 line-clamp-2 max-w-xs">
+              {hoveredNode.evidence}
+            </div>
           </div>
         </div>
       )}
