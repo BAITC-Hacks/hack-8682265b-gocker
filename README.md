@@ -26,10 +26,15 @@ Or trigger recomputation directly from the web interface using the **"Recompute"
 
 ### Running Automated Tests
 
-Run the complete 21-test validation suite covering data schemas, 16 components, roles, and API endpoints:
+Run the complete backend (21 tests) and frontend (18 tests) validation suites:
 
 ```bash
+# Backend test suite (data schemas, graph metrics, roles, APIs):
 backend/.venv/bin/python -m pytest backend/tests -v
+
+# Frontend test suite (proxy routes, role colors, filtering, UI logic):
+bun test
+# (or on NixOS: nix-shell -p bun --run "bun test")
 ```
 
 ---
