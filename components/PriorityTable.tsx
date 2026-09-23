@@ -13,6 +13,7 @@ import {
   ArrowDownLeft,
   ArrowUpRight,
   Network,
+  Download,
   FileDown,
   AlertTriangle,
   CheckCircle2,
@@ -79,7 +80,7 @@ export default function PriorityTable({
         }
         setReviews(map);
       })
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   // Close overflow menu when clicking outside
@@ -231,6 +232,51 @@ export default function PriorityTable({
     return filteredNodes.slice(start, start + pageSize);
   }, [filteredNodes, page, pageSize]);
 
+  const handleExportReferralList = () => {
+    const headers = [
+      "Rank",
+      "Client_GID",
+      "Assigned_Role",
+      "Priority_Score",
+      "AML_Role_Evidence_Rationale",
+      "Total_Incoming_KZT",
+      "Total_Outgoing_KZT",
+      "Pass_Through_Ratio",
+      "Is_Law_Enforcement_Seed",
+      "Circular_Flow_Flag",
+      "Rapid_Transit_Flag",
+      "Structuring_Risk_Flag",
+    ];
+
+    const rows = filteredNodes.map((n, idx) => [
+      idx + 1,
+      n.gid,
+      `"${n.role}"`,
+      n.priority_score.toFixed(4),
+      `"${n.evidence.replace(/"/g, '""')}"`,
+      n.in_kzt,
+      n.out_kzt,
+      n.pass_through !== null ? (n.pass_through * 100).toFixed(1) + "%" : "N/A",
+      n.is_seed ? "YES" : "NO",
+      n.in_cycle ? "YES" : "NO",
+      n.rapid_transit ? "YES" : "NO",
+      n.structuring_risk ? "YES" : "NO",
+    ]);
+
+    const csvContent = [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute(
+      "download",
+      `law_enforcement_inquiry_referral_list_${new Date().toISOString().slice(0, 10)}.csv`
+    );
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div className="flex-1 flex flex-col h-full bg-[var(--fb-bg)] p-4 sm:p-6 overflow-hidden">
       {/* Table Header Controls */}
@@ -302,17 +348,26 @@ export default function PriorityTable({
               setEscalatedOnly(!escalatedOnly);
               setPage(1);
             }}
-            className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition flex items-center gap-1.5 cursor-pointer ${
-              escalatedOnly
+            className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition flex items-center gap-1.5 cursor-pointer ${escalatedOnly
                 ? "bg-rose-500/15 border-rose-500 text-rose-600 dark:text-rose-400 font-bold"
                 : "bg-[var(--fb-surface)] border-[var(--fb-border)] text-[var(--fb-text-secondary)] hover:text-[var(--fb-text-primary)]"
-            }`}
+              }`}
           >
             <AlertTriangle className="w-3.5 h-3.5 text-rose-500" />
             <span>Escalated only</span>
             <span className="px-1.5 py-0.2 rounded-full bg-rose-500/20 text-rose-600 dark:text-rose-400 text-[10px] font-mono">
               {escalatedCount}
             </span>
+          </button>
+
+          {/* Export Referral Dossier Button (CSV) */}
+          <button
+            onClick={handleExportReferralList}
+            className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-[var(--fb-border)] bg-[var(--fb-surface)] hover:bg-[var(--fb-border)] text-[var(--fb-text-primary)] transition flex items-center gap-1.5 cursor-pointer shadow-xs"
+            title="Download Law Enforcement Referral List (CSV)"
+          >
+            <Download className="w-3.5 h-3.5 text-emerald-600" />
+            <span>Export Referral List</span>
           </button>
 
           {/* Generate Request List PDF Export Button */}
@@ -374,9 +429,8 @@ export default function PriorityTable({
                 <React.Fragment key={n.gid}>
                   {/* Default Compact Row (≤ 6 columns) */}
                   <tr
-                    className={`hover:bg-[var(--fb-border)]/40 transition cursor-pointer ${
-                      isExpanded ? "bg-[var(--fb-border)]/20" : ""
-                    }`}
+                    className={`hover:bg-[var(--fb-border)]/40 transition cursor-pointer ${isExpanded ? "bg-[var(--fb-border)]/20" : ""
+                      }`}
                     onClick={() => toggleExpand(n.gid)}
                   >
                     {/* 1. Rank (Sticky left-0) */}
@@ -432,25 +486,23 @@ export default function PriorityTable({
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-2.5">
                         <span
-                          className={`font-mono font-bold text-xs ${
-                            isCritical
+                          className={`font-mono font-bold text-xs ${isCritical
                               ? "text-rose-600"
                               : isElevated
-                              ? "text-amber-600"
-                              : "text-[var(--fb-text-secondary)]"
-                          }`}
+                                ? "text-amber-600"
+                                : "text-[var(--fb-text-secondary)]"
+                            }`}
                         >
                           {n.priority_score.toFixed(3)}
                         </span>
                         <div className="w-20 bg-[var(--fb-border)] h-1.5 rounded-full overflow-hidden">
                           <div
-                            className={`h-full rounded-full ${
-                              isCritical
+                            className={`h-full rounded-full ${isCritical
                                 ? "bg-rose-500"
                                 : isElevated
-                                ? "bg-amber-500"
-                                : "bg-[var(--fb-text-secondary)]"
-                            }`}
+                                  ? "bg-amber-500"
+                                  : "bg-[var(--fb-text-secondary)]"
+                              }`}
                             style={{
                               width: `${Math.min(100, n.priority_score * 100)}%`,
                             }}

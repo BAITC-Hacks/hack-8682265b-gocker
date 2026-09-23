@@ -52,15 +52,16 @@ backend/.venv/bin/python -m pytest backend/tests/test_performance.py -v
 
 ## 2. Test Suite Architecture & Verification Map
 
-### Frontend Test Matrix (18 tests)
+### Frontend Test Matrix (21 tests)
 | Test File | Target Area | What It Verifies |
 |---|---|---|
-| `tests/api-proxy.test.ts` | `app/api/[...path]/route.ts` | • Proxies GET requests with path and query parameters<br>• Proxies POST requests with JSON payload and headers<br>• Handles backend connection failures gracefully with HTTP 502 |
+| `tests/api-proxy.test.ts` | `app/api/[...path]/route.ts` | • Proxies GET requests with path and query parameters<br>• Proxies POST requests with JSON and multipart bodies<br>• Handles backend connection failures gracefully with HTTP 502 |
 | `tests/graph-utils.test.ts` | `components/GraphView.tsx`<br>Color & Scaling logic | • `ROLE_COLORS` dictionary contains all 6 roles with valid hex codes<br>• Search filters matching GID, role, and evidence strings<br>• Risk tiering: critical ($\ge 0.5$), elevated ($[0.25, 0.5)$), moderate ($< 0.25$)<br>• Edge thickness scaling with log-volume formula<br>• Formatting for turnaround hours, pass ratio, and currency |
 | `tests/components-logic.test.ts` | `PriorityTable.tsx`<br>`NodeCard.tsx`<br>`AssistantPanel.tsx` | • PriorityTable sorting descending by priority score<br>• NodeCard counterparty incoming/outgoing neighbor extraction<br>• Hop-4 boundary badge detection<br>• Semicolon-separated cluster top GID parsing<br>• Assistant regex extraction of 18-digit GIDs from natural text |
 | `tests/integration.test.ts` | End-to-End API Integration | • Verifies `/health` endpoint status<br>• Verifies `/graph` payload schema (2,248 nodes, 3,119 edges, 81 seeds)<br>• Verifies `/graph/top` delivers ranked list with required fields |
+| `tests/upload-workflow.test.ts` | Custom Ingestion & Referral Dossier | • Seed GID multi-delimiter regex extraction<br>• Law enforcement inquiry referral CSV schema formatting<br>• Active dataset transition and status indicator logic |
 
-### Backend Test Matrix (21 tests)
+### Backend Test Matrix (26 tests)
 | Test File | Target Module | What It Verifies |
 |---|---|---|
 | `test_data_loader.py` | `app.pipeline.load_data` | • 2,248 nodes, 3,119 edges, 4,840 txs<br>• Exactly 81 seed accounts (`is_seed=True`)<br>• Minimum 5,000 KZT transaction cutoff<br>• Identifies exactly 444 depth-4 cutoff artifact nodes |
@@ -68,6 +69,7 @@ backend/.venv/bin/python -m pytest backend/tests/test_performance.py -v
 | `test_roles_and_priority.py` | `app.pipeline.roles`<br>`app.pipeline.priority` | • All nodes get 1 of 6 valid roles: `coordinator`, `consolidator`, `distributor`, `transit`, `terminal`, `peripheral`<br>• Rule precedence order (Rule 1 $\to$ Rule 6)<br>• Hop-4 terminal nodes flagged with `truncated_by_depth=True` and discount factor ($\times 0.6$)<br>• Evidence length $\le 200$ chars<br>• **Zero guilt assertions** (no forbidden terms)<br>• Priority score multipliers ($1.15\times$ for coordinators & consolidators) |
 | `test_csv_exports.py` | `app.pipeline.export_csv` | • `nodes_roles.csv`: 2,248 rows, dual columns `id` and `gid`<br>• `clusters.csv`: cluster sums match 2,248 nodes & 81 seeds<br>• `top_nodes.csv`: $\ge 20$ rows sorted descending by priority score |
 | `test_api_endpoints.py` | `app.routers.*`<br>`app.main` | • FastAPI `TestClient` verification of all REST endpoints<br>• Pre-warmed cache behavior<br>• GID extraction and response structure for `/assistant` |
+| `test_upload_dataset.py` | `app.routers.upload`<br>`app.pipeline.dataset_manager` | • `/dataset/status` and `/dataset/reset` baseline restoration<br>• Seed string parsing and multi-source BFS hop depth derivation<br>• Custom CSV upload, full pipeline execution, and referral dossier export |
 | `test_performance.py` | `app.pipeline.run` | • End-to-end execution latency is well under the 5-minute limit (benchmark ~1.5s) |
 
 ---

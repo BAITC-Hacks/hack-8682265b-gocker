@@ -11,12 +11,8 @@ _GRAPH_CACHE: Optional[Dict[str, Any]] = None
 
 
 def get_data_dirs() -> tuple[Path, Path]:
-    if Path("/data/raw").exists():
-        return Path("/data/raw"), Path("/data/output")
-    project_root = Path(__file__).resolve().parent.parent.parent.parent
-    raw_dir = project_root / "data" / "raw"
-    out_dir = project_root / "data" / "output"
-    return raw_dir, out_dir
+    from app.pipeline.dataset_manager import get_active_data_dirs
+    return get_active_data_dirs()
 
 
 def invalidate_cache() -> None:
