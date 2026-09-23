@@ -19,39 +19,29 @@
 
 ## Screenshots & Media / Скриншоты и Демо
 
-> **Media Showcase Placeholder**
-> Add visual assets, UI walk-through screenshots, and screen recordings below.
 
 ### Application Walkthrough Video
 <!-- VIDEO: Add demo video embed / link here -->
 <!-- Example: [![Money Graph Demo Video](https://img.shields.io/badge/Demo%20Video-Watch%20Now-red?style=for-the-badge&logo=youtube)](https://your-video-link.com) -->
 <div align="center">
-  <p><i>📹 [Video Demo Placeholder - Upload or link your 1-2 min video walk-through here]</i></p>
+  <p><i>📹 [![Money Graph Devmo Video](https://youtu.be/AlUuox2UAwU)](https://youtu.be/AlUuox2UAwU)</i></p>
 </div>
 
 <br/>
 
 ### Key Interface Screenshots
 
-| **Interactive Graph Visualizer (60 FPS Canvas)** | **Investigation Queue & Escalation Workflow** |
+| **Interactive Graph Visualizer & Client Dossier** | **Priority Investigation Queue & Escalation** |
 |:---:|:---:|
-| <!-- SCREENSHOT: Graph Canvas View with Directed Flows and Roles --> <div align="center"><br/><i>🖼️ [Screenshot Placeholder: Canvas Graph View with Directed Flows]</i><br/><br/></div> | <!-- SCREENSHOT: Priority Queue Table with Filter Badges and Status --> <div align="center"><br/><i>🖼️ [Screenshot Placeholder: Investigation Queue with Review Badges]</i><br/><br/></div> |
+| <a href="screenshots/Screenshot_20260923_171918.png"><img src="screenshots/Screenshot_20260923_171918.png" width="100%" alt="Interactive Graph Visualizer" /></a> | <a href="screenshots/Screenshot_20260923_171950.png"><img src="screenshots/Screenshot_20260923_171950.png" width="100%" alt="Priority Investigation Queue" /></a> |
 
-| **Client Dossier & Counterparty Breakdown** | **Explain GID Trace & Rule Transparency** |
+| **Entire 2,248-Node Network & Cross-Cluster Flows** | **Custom Data Ingestion & Pipeline Reconstruction** |
 |:---:|:---:|
-| <!-- SCREENSHOT: NodeCard side panel showing inbound/outbound topology --> <div align="center"><br/><i>🖼️ [Screenshot Placeholder: Client Dossier Panel]</i><br/><br/></div> | <!-- SCREENSHOT: Explain GID Modal showing exact metrics & rule condition --> <div align="center"><br/><i>🖼️ [Screenshot Placeholder: Explain GID Modal]</i><br/><br/></div> |
+| <a href="screenshots/Screenshot_20260923_172020.png"><img src="screenshots/Screenshot_20260923_172020.png" width="100%" alt="Entire Network Topology" /></a> | <a href="screenshots/Screenshot_20260923_172034.png"><img src="screenshots/Screenshot_20260923_172034.png" width="100%" alt="Custom Case Ingestion Engine" /></a> |
 
-| **Community Bubble Map (82 Louvain Clusters)** | **Threshold Sensitivity Analysis Drawer** |
+| **Explainable AML Rule Trace & Court Speech (Russian UI)** | **Official Law Enforcement Referral Dossier (PDF Export)** |
 |:---:|:---:|
-| <!-- SCREENSHOT: Cluster Bubble Map sized by internal volume --> <div align="center"><br/><i>🖼️ [Screenshot Placeholder: Cluster Bubble Map]</i><br/><br/></div> | <!-- SCREENSHOT: Threshold Sensitivity Panel with dynamic sliders --> <div align="center"><br/><i>🖼️ [Screenshot Placeholder: Threshold Sensitivity Panel]</i><br/><br/></div> |
-
-| **Data Completeness & Limitation Audit** | **Law Enforcement Referral Dossier (PDF & CSV)** |
-|:---:|:---:|
-| <!-- SCREENSHOT: Data Completeness Modal with Hop-4 and Truncation stats --> <div align="center"><br/><i>🖼️ [Screenshot Placeholder: Data Completeness Audit Modal]</i><br/><br/></div> | <!-- SCREENSHOT: Law Enforcement Export preview / generated document --> <div align="center"><br/><i>🖼️ [Screenshot Placeholder: Law Enforcement Referral Export]</i><br/><br/></div> |
-
-| **AI AML Assistant Drawer (Chat & Lookup)** | **Bilingual Localization (Russian UI)** |
-|:---:|:---:|
-| <!-- SCREENSHOT: AI Assistant panel explaining laundering typologies --> <div align="center"><br/><i>🖼️ [Screenshot Placeholder: AI Assistant Chat & Topology Q&A]</i><br/><br/></div> | <!-- SCREENSHOT: Russian Language Mode Layout --> <div align="center"><br/><i>🖼️ [Screenshot Placeholder: Russian Language UI Layout]</i><br/><br/></div> |
+| <a href="screenshots/Screenshot_20260923_172048.png"><img src="screenshots/Screenshot_20260923_172048.png" width="100%" alt="Explainable Rule Trace & 30-Second Court Script" /></a> | <a href="screenshots/Screenshot_20260923_172117.png"><img src="screenshots/Screenshot_20260923_172117.png" width="100%" alt="Official Referral Dossier PDF" /></a> |
 
 ---
 

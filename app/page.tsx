@@ -24,6 +24,7 @@ import {
   Sliders,
   ExternalLink,
   Languages,
+  Zap,
 } from "lucide-react";
 import GraphView, { GraphNode, GraphEdge, ROLE_COLORS } from "@/components/GraphView";
 import PriorityTable from "@/components/PriorityTable";
@@ -32,6 +33,7 @@ import NodeCard from "@/components/NodeCard";
 import AssistantPanel from "@/components/AssistantPanel";
 import OnboardingModal from "@/components/OnboardingModal";
 import UploadModal from "@/components/UploadModal";
+import DataNotLoadedModal from "@/components/DataNotLoadedModal";
 import { useT } from "@/lib/i18n";
 
 type ActiveTab = "table" | "clusters" | "graph";
@@ -54,6 +56,8 @@ export default function AnalystWorkspace() {
   const [assistantPrompt, setAssistantPrompt] = useState<string | null>(null);
   const [isOverviewOpen, setIsOverviewOpen] = useState(false);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [isDataModalOpen, setIsDataModalOpen] = useState(false);
+  const [dataModalDismissed, setDataModalDismissed] = useState(false);
   const [datasetStatus, setDatasetStatus] = useState<any>(null);
 
   const [loading, setLoading] = useState(true);
@@ -117,6 +121,16 @@ export default function AnalystWorkspace() {
       .then((d) => setDataGaps(d))
       .catch(() => {});
   }, []);
+
+  useEffect(() => {
+    if (!loading) {
+      if (nodes.length === 0 && !dataModalDismissed) {
+        setIsDataModalOpen(true);
+      } else if (nodes.length > 0) {
+        setIsDataModalOpen(false);
+      }
+    }
+  }, [loading, nodes.length, dataModalDismissed]);
 
   const handleExplain = async (targetGid: number | string) => {
     const clean = String(targetGid).trim();
@@ -216,8 +230,8 @@ export default function AnalystWorkspace() {
 
   return (
     <div className="flex flex-col h-screen w-screen bg-[var(--fb-bg)] text-[var(--fb-text-primary)] overflow-hidden font-sans">
-      {/* 3-Step First-Time Onboarding Overlay */}
-      <OnboardingModal />
+      {/* 3-Step First-Time Onboarding Overlay (shown when data is present) */}
+      {nodes.length > 0 && <OnboardingModal />}
 
       {/* Top Header - Structured Left-to-Right without wrapping */}
       <header className="h-14 border-b border-[var(--fb-border)] bg-[var(--fb-surface)] px-4 sm:px-6 flex items-center justify-between shrink-0 z-30 flex-nowrap gap-4 xl:gap-6 min-w-0">
@@ -442,6 +456,31 @@ export default function AnalystWorkspace() {
           </button>
         </div>
       </header>
+
+      {/* Banner if graph data is empty and modal is closed */}
+      {!loading && nodes.length === 0 && (
+        <div className="bg-amber-500/10 border-b border-amber-500/25 px-4 py-2 flex items-center justify-between text-xs text-amber-500 z-20 shrink-0">
+          <div className="flex items-center gap-2 font-medium">
+            <AlertTriangle className="w-4 h-4 shrink-0" />
+            <span>{t.data_banner_warning}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setIsDataModalOpen(true)}
+              className="px-2.5 py-1 rounded-md bg-amber-500 text-black font-bold text-xs hover:bg-amber-400 transition cursor-pointer flex items-center gap-1.5 shadow-xs"
+            >
+              <Zap className="w-3.5 h-3.5 fill-current" />
+              <span>{t.data_banner_action}</span>
+            </button>
+            <button
+              onClick={() => setIsUploadModalOpen(true)}
+              className="px-2.5 py-1 rounded-md border border-amber-500/30 text-amber-500 hover:bg-amber-500/10 font-medium text-xs transition cursor-pointer"
+            >
+              {t.upload_data_btn}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Main Workspace Area with Optional Sidebars */}
       <div className="flex-1 flex overflow-hidden relative">
@@ -996,6 +1035,17 @@ export default function AnalystWorkspace() {
         onClose={() => setIsUploadModalOpen(false)}
         onUploadSuccess={fetchGraphData}
         currentDataset={datasetStatus}
+      />
+
+      {/* Data Not Loaded Prompt Modal */}
+      <DataNotLoadedModal
+        isOpen={isDataModalOpen}
+        onClose={() => {
+          setIsDataModalOpen(false);
+          setDataModalDismissed(true);
+        }}
+        onLoadSuccess={fetchGraphData}
+        onOpenUploadModal={() => setIsUploadModalOpen(true)}
       />
     </div>
   );

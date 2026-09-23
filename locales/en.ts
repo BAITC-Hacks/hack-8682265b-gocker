@@ -210,6 +210,30 @@ const en = {
   table_escalated: "Escalated",
   table_cleared: "Cleared",
 
+  /* ── Data Not Loaded Modal ── */
+  data_not_loaded_badge: "DATASET REQUIRED",
+  data_not_loaded_title: "Financial Graph Data Not Loaded",
+  data_not_loaded_subtitle:
+    "No transaction network data is currently loaded in the active workspace. Would you like to load the baseline dataset instantly?",
+  data_specs_title: "HackAlem Baseline Case Includes:",
+  data_specs_seeds: "81 Seed Accounts",
+  data_specs_nodes: "2,248 Network Accounts",
+  data_specs_edges: "4,800+ Transactions",
+  data_specs_clusters: "Louvain Clusters & Topology Metrics",
+  data_load_instantly_btn: "Load Baseline Data Instantly",
+  data_loading_instantly: "Loading dataset & graph cache...",
+  data_upload_custom_btn: "Upload Custom Dataset",
+  data_dismiss_btn: "Dismiss",
+  data_load_success: "Dataset loaded successfully!",
+  data_backend_offline_title: "Backend Service Unavailable",
+  data_backend_offline_desc:
+    "Could not connect to backend at http://127.0.0.1:8000. Please ensure the backend server is running:",
+  data_backend_cmd_copy: "Copy command",
+  data_backend_cmd_copied: "Command copied!",
+  data_retry_btn: "Retry Connection",
+  data_banner_warning: "Financial graph data is not loaded.",
+  data_banner_action: "Load Instantly",
+
   /* ── Error / misc ── */
   error_load_graph: "Could not load graph data. Make sure backend service is running.",
   error_no_account: "No account found matching GID",

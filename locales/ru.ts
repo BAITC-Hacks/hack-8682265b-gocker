@@ -212,6 +212,30 @@ const ru: Translations = {
   table_escalated: "Эскалировано",
   table_cleared: "Очищено",
 
+  /* ── Data Not Loaded Modal ── */
+  data_not_loaded_badge: "ТРЕБУЮТСЯ ДАННЫЕ",
+  data_not_loaded_title: "Данные финансового графа не загружены",
+  data_not_loaded_subtitle:
+    "В активной рабочей области нет данных финансовой сети. Хотите мгновенно загрузить базовый набор данных?",
+  data_specs_title: "Базовый набор данных HackAlem включает:",
+  data_specs_seeds: "81 сид-счёт",
+  data_specs_nodes: "2 248 счетов сети",
+  data_specs_edges: "4 800+ транзакций",
+  data_specs_clusters: "Кластеры Лувена и топологические метрики",
+  data_load_instantly_btn: "Загрузить данные мгновенно",
+  data_loading_instantly: "Загрузка набора и кэша графа...",
+  data_upload_custom_btn: "Загрузить свои данные",
+  data_dismiss_btn: "Закрыть",
+  data_load_success: "Данные успешно загружены!",
+  data_backend_offline_title: "Сервис бэкенда недоступен",
+  data_backend_offline_desc:
+    "Не удалось подключиться к бэкенду на http://127.0.0.1:8000. Убедитесь, что сервер бэкенда запущен:",
+  data_backend_cmd_copy: "Скопировать команду",
+  data_backend_cmd_copied: "Команда скопирована!",
+  data_retry_btn: "Повторить попытку",
+  data_banner_warning: "Данные финансового графа не загружены.",
+  data_banner_action: "Загрузить мгновенно",
+
   /* ── Error / misc ── */
   error_load_graph: "Не удалось загрузить данные графа. Убедитесь, что сервис запущен.",
   error_no_account: "Счёт с таким GID не найден",
