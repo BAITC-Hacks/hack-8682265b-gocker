@@ -24,6 +24,7 @@ import {
   CheckCircle2,
   Sliders,
   ExternalLink,
+  Languages,
 } from "lucide-react";
 import GraphView, { GraphNode, GraphEdge, ROLE_COLORS } from "@/components/GraphView";
 import PriorityTable from "@/components/PriorityTable";
@@ -32,10 +33,12 @@ import NodeCard from "@/components/NodeCard";
 import AssistantPanel from "@/components/AssistantPanel";
 import OnboardingModal from "@/components/OnboardingModal";
 import UploadModal from "@/components/UploadModal";
+import { useT } from "@/lib/i18n";
 
 type ActiveTab = "table" | "clusters" | "graph";
 
 export default function AnalystWorkspace() {
+  const { t, toggleLocale } = useT();
   // Landing default is Investigation Queue (table)
   const [activeTab, setActiveTab] = useState<ActiveTab>("table");
   const [nodes, setNodes] = useState<GraphNode[]>([]);
@@ -98,7 +101,7 @@ export default function AnalystWorkspace() {
       setSummary(data.summary || null);
       await fetchDatasetStatus();
     } catch {
-      setErrorMsg("Could not load graph data. Make sure backend service is running.");
+      setErrorMsg(t.error_load_graph);
     } finally {
       setLoading(false);
     }
@@ -182,7 +185,7 @@ export default function AnalystWorkspace() {
       setHighlightedGids([target.gid]);
       setActiveTab("graph");
     } else {
-      alert(`No account found matching GID "${clean}"`);
+      alert(`${t.error_no_account} "${clean}"`);
     }
   };
 
@@ -227,10 +230,10 @@ export default function AnalystWorkspace() {
           <div>
             <div className="flex items-center gap-1.5">
               <span className="text-xs font-extrabold tracking-tight text-[var(--fb-text-primary)]">
-                FREEDOM BANK
+                {t.brand}
               </span>
               <span className="text-[10px] px-1.5 py-0.2 rounded font-bold bg-neutral-200 dark:bg-neutral-800 text-[var(--fb-text-secondary)]">
-                MONEY GRAPH
+                {t.brand_product}
               </span>
             </div>
           </div>
@@ -240,46 +243,46 @@ export default function AnalystWorkspace() {
         <nav className="flex items-center p-0.5 rounded-lg bg-[var(--fb-border)]/50 border border-[var(--fb-border)] shrink-0">
           <button
             onClick={() => setActiveTab("table")}
-            className={`px-3 py-1 text-xs font-semibold rounded-md transition flex items-center gap-1.5 cursor-pointer ${
+            className={`px-2 py-1 text-xs font-semibold rounded-md transition flex items-center gap-1.5 cursor-pointer ${
               activeTab === "table"
                 ? "bg-[var(--fb-bg)] text-[var(--fb-text-primary)] shadow-xs"
                 : "text-[var(--fb-text-secondary)] hover:text-[var(--fb-text-primary)]"
             }`}
           >
-            <Table className="w-3.5 h-3.5" />
-            <span>Investigation Queue</span>
+            <Table className="w-3.5 h-3.5 shrink-0" />
+            <span className="hidden xl:inline whitespace-nowrap">{t.tab_queue}</span>
           </button>
 
           <button
             onClick={() => setActiveTab("clusters")}
-            className={`px-3 py-1 text-xs font-semibold rounded-md transition flex items-center gap-1.5 cursor-pointer ${
+            className={`px-2 py-1 text-xs font-semibold rounded-md transition flex items-center gap-1.5 cursor-pointer ${
               activeTab === "clusters"
                 ? "bg-[var(--fb-bg)] text-[var(--fb-text-primary)] shadow-xs"
                 : "text-[var(--fb-text-secondary)] hover:text-[var(--fb-text-primary)]"
             }`}
           >
-            <Layers className="w-3.5 h-3.5 text-[var(--fb-accent-dark)]" />
-            <span>Cluster Explorer</span>
+            <Layers className="w-3.5 h-3.5 text-[var(--fb-accent-dark)] shrink-0" />
+            <span className="hidden xl:inline whitespace-nowrap">{t.tab_clusters}</span>
           </button>
 
           <button
             onClick={() => setActiveTab("graph")}
-            className={`px-3 py-1 text-xs font-semibold rounded-md transition flex items-center gap-1.5 cursor-pointer ${
+            className={`px-2 py-1 text-xs font-semibold rounded-md transition flex items-center gap-1.5 cursor-pointer ${
               activeTab === "graph"
                 ? "bg-[var(--fb-bg)] text-[var(--fb-text-primary)] shadow-xs"
                 : "text-[var(--fb-text-secondary)] hover:text-[var(--fb-text-primary)]"
             }`}
           >
-            <Network className="w-3.5 h-3.5" />
-            <span>Network Graph</span>
+            <Network className="w-3.5 h-3.5 shrink-0" />
+            <span className="hidden xl:inline whitespace-nowrap">{t.tab_graph}</span>
           </button>
         </nav>
 
-        {/* 3. KPI Cluster */}
-        <div className="hidden lg:flex items-center gap-4 shrink-0">
+        {/* 3. KPI Cluster — only at xl to leave room for Russian labels */}
+        <div className="hidden xl:flex items-center gap-3 shrink-0">
           {/* Node Count */}
           <div className="flex flex-col text-right">
-            <span className="text-[10px] text-[var(--fb-text-secondary)] uppercase font-semibold">Nodes</span>
+            <span className="text-[10px] text-[var(--fb-text-secondary)] uppercase font-semibold max-w-[90px] truncate">{t.kpi_nodes}</span>
             <span className="font-mono text-xs font-bold text-[var(--fb-text-primary)]">
               {nodes.length ? nodes.length.toLocaleString() : "—"}
             </span>
@@ -289,7 +292,7 @@ export default function AnalystWorkspace() {
 
           {/* High Priority (≥0.5) Node Count */}
           <div className="flex flex-col text-right">
-            <span className="text-[10px] text-[var(--fb-text-secondary)] uppercase font-semibold">High Priority (≥0.5)</span>
+            <span className="text-[10px] text-[var(--fb-text-secondary)] uppercase font-semibold max-w-[100px] truncate" title={t.kpi_high_priority}>{t.kpi_high_priority}</span>
             <span className="font-mono text-xs font-bold text-rose-600">
               {priorityNodeCount}
             </span>
@@ -299,7 +302,7 @@ export default function AnalystWorkspace() {
 
           {/* Total Turnover */}
           <div className="flex flex-col text-right">
-            <span className="text-[10px] text-[var(--fb-text-secondary)] uppercase font-semibold">Total Turnover</span>
+            <span className="text-[10px] text-[var(--fb-text-secondary)] uppercase font-semibold max-w-[90px] truncate">{t.kpi_total_turnover}</span>
             <span className="font-mono text-xs font-bold text-[var(--fb-text-primary)]">
               {(totalTurnover / 1_000_000).toFixed(1)}M KZT
             </span>
@@ -307,14 +310,14 @@ export default function AnalystWorkspace() {
         </div>
 
         {/* 4. GID Search Box */}
-        <form onSubmit={handleSearchSubmit} className="relative shrink-0">
+        <form onSubmit={handleSearchSubmit} className="relative shrink min-w-0">
           <Search className="w-3.5 h-3.5 absolute left-2.5 top-2 text-[var(--fb-text-secondary)] pointer-events-none" />
           <input
             type="text"
-            placeholder="Search GID..."
+            placeholder={t.search_placeholder}
             value={searchGidInput}
             onChange={(e) => setSearchGidInput(e.target.value)}
-            className="w-32 xl:w-44 pl-8 pr-2.5 py-1 text-xs rounded-md bg-[var(--fb-bg)] border border-[var(--fb-border)] text-[var(--fb-text-primary)] placeholder-[var(--fb-text-secondary)] focus:outline-none focus:border-[var(--fb-accent-dark)] font-mono"
+            className="w-28 lg:w-36 xl:w-44 pl-8 pr-2.5 py-1 text-xs rounded-md bg-[var(--fb-bg)] border border-[var(--fb-border)] text-[var(--fb-text-primary)] placeholder-[var(--fb-text-secondary)] focus:outline-none focus:border-[var(--fb-accent-dark)] font-mono"
           />
         </form>
 
@@ -329,10 +332,10 @@ export default function AnalystWorkspace() {
                   ? "bg-[var(--fb-accent)] text-black border-[var(--fb-accent)]"
                   : "bg-[var(--fb-surface)] border-[var(--fb-border)] text-[var(--fb-text-secondary)] hover:text-[var(--fb-text-primary)]"
               }`}
-              title="Explain GID Rule Trace"
+              title={t.explain_gid_title}
             >
               <HelpCircle className="w-3.5 h-3.5 text-[var(--fb-accent-dark)]" />
-              <span className="hidden xl:inline text-xs font-semibold">Explain GID</span>
+              <span className="hidden xl:inline text-xs font-semibold">{t.explain_gid_btn}</span>
             </button>
 
             {/* Explain GID Lightweight Popover */}
@@ -341,7 +344,7 @@ export default function AnalystWorkspace() {
                 <div className="flex items-center justify-between pb-2 mb-2 border-b border-[var(--fb-border)]">
                   <span className="text-xs font-bold flex items-center gap-1.5">
                     <HelpCircle className="w-3.5 h-3.5 text-[var(--fb-accent-dark)]" />
-                    Explain Account GID
+                    {t.explain_gid_title}
                   </span>
                   <button
                     onClick={() => setIsExplainPopoverOpen(false)}
@@ -360,7 +363,7 @@ export default function AnalystWorkspace() {
                   <div className="min-w-[220px] overflow-hidden">
                     <input
                       type="text"
-                      placeholder="Enter 18-digit GID..."
+                      placeholder={t.explain_gid_placeholder}
                       value={explainGidInput}
                       onChange={(e) => setExplainGidInput(e.target.value)}
                       className="w-full px-2.5 py-1.5 text-xs rounded-lg bg-[var(--fb-bg)] border border-[var(--fb-border)] focus:border-[var(--fb-accent)] text-[var(--fb-text-primary)] placeholder-[var(--fb-text-secondary)] focus:outline-none font-mono truncate"
@@ -371,7 +374,7 @@ export default function AnalystWorkspace() {
                     type="submit"
                     className="w-full py-1.5 px-3 rounded-lg bg-[var(--fb-accent)] hover:bg-[var(--fb-accent-dark)] text-black font-semibold text-xs transition cursor-pointer shadow-xs"
                   >
-                    Inspect AML Rule Trace
+                    {t.explain_gid_submit}
                   </button>
                 </form>
               </div>
@@ -382,12 +385,12 @@ export default function AnalystWorkspace() {
           <button
             onClick={handleRecompute}
             disabled={recomputing}
-            className="px-3 py-1.5 rounded-md bg-[var(--fb-surface)] border border-[var(--fb-border)] text-[var(--fb-text-primary)] hover:border-[var(--fb-accent)] text-xs font-semibold transition flex items-center gap-1.5 disabled:opacity-50 cursor-pointer shadow-xs"
+            className="px-2.5 py-1.5 rounded-md bg-[var(--fb-surface)] border border-[var(--fb-border)] text-[var(--fb-text-primary)] hover:border-[var(--fb-accent)] text-xs font-semibold transition flex items-center gap-1.5 disabled:opacity-50 cursor-pointer shadow-xs shrink-0"
             title="Recalculate network metrics and roles"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${recomputing ? "animate-spin text-[var(--fb-accent-dark)]" : ""}`} />
-            <span className="hidden sm:inline">
-              {recomputing ? "Recalculating..." : "Recompute"}
+            <RefreshCw className={`w-3.5 h-3.5 shrink-0 ${recomputing ? "animate-spin text-[var(--fb-accent-dark)]" : ""}`} />
+            <span className="hidden lg:inline whitespace-nowrap">
+              {recomputing ? t.recomputing_btn : t.recompute_btn}
             </span>
           </button>
 
@@ -398,20 +401,30 @@ export default function AnalystWorkspace() {
             title="Click to manage or upload case data"
           >
             <span className={`w-2 h-2 rounded-full ${datasetStatus?.is_custom ? "bg-amber-500" : "bg-emerald-500"} animate-pulse`} />
-            <span className="text-[var(--fb-text-secondary)]">Case:</span>
+            <span className="text-[var(--fb-text-secondary)]">{t.case_label}</span>
             <span className="font-semibold text-[var(--fb-text-primary)] max-w-[130px] truncate">
-              {datasetStatus?.is_custom ? datasetStatus.dataset_name : "Baseline (81 Seeds)"}
+              {datasetStatus?.is_custom ? datasetStatus.dataset_name : t.case_baseline}
             </span>
           </div>
 
           {/* Upload Custom Data Button */}
           <button
             onClick={() => setIsUploadModalOpen(true)}
-            className="px-3 py-1.5 rounded-md bg-[var(--fb-accent)] text-black hover:bg-[var(--fb-accent-dark)] text-xs font-bold transition flex items-center gap-1.5 shadow-xs cursor-pointer"
+            className="px-3 py-1.5 rounded-md bg-[var(--fb-accent)] text-black hover:bg-[var(--fb-accent-dark)] text-xs font-bold transition flex items-center gap-1.5 shadow-xs cursor-pointer shrink-0"
             title="Upload Custom Transfer Data or Case Seeds"
           >
-            <UploadCloud className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Upload Data</span>
+            <UploadCloud className="w-3.5 h-3.5 shrink-0" />
+            <span className="hidden lg:inline whitespace-nowrap">{t.upload_data_btn}</span>
+          </button>
+
+          {/* Language Toggle */}
+          <button
+            onClick={toggleLocale}
+            className="px-2.5 py-1.5 rounded-md bg-[var(--fb-surface)] border border-[var(--fb-border)] text-[var(--fb-text-secondary)] hover:text-[var(--fb-text-primary)] text-xs font-bold transition flex items-center gap-1 shadow-xs cursor-pointer"
+            title="Toggle language"
+          >
+            <Languages className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">{t.lang_toggle}</span>
           </button>
 
           {/* Network Overview Drawer Toggle */}
@@ -436,7 +449,7 @@ export default function AnalystWorkspace() {
           <div className="absolute inset-0 bg-white/70 dark:bg-black/70 backdrop-blur-xs flex flex-col items-center justify-center gap-3 z-50">
             <Loader2 className="w-8 h-8 animate-spin text-[var(--fb-accent-dark)]" />
             <span className="text-xs font-bold text-[var(--fb-text-primary)]">
-              {recomputing ? "Recalculating graph & role metrics…" : "Loading financial network…"}
+              {recomputing ? t.loading_recomputing : t.loading_network}
             </span>
           </div>
         )}
@@ -446,7 +459,7 @@ export default function AnalystWorkspace() {
           <aside className="w-72 border-r border-[var(--fb-border)] bg-[var(--fb-surface)] flex flex-col shrink-0 z-20 overflow-y-auto animate-in slide-in-from-left duration-200">
             <div className="p-3.5 border-b border-[var(--fb-border)] flex items-center justify-between">
               <span className="text-xs font-bold uppercase tracking-wider text-[var(--fb-text-primary)]">
-                Network Overview
+                {t.overview_title}
               </span>
               <button
                 onClick={() => setIsOverviewOpen(false)}
@@ -459,41 +472,41 @@ export default function AnalystWorkspace() {
             <div className="p-4 space-y-4 text-xs">
               <div className="space-y-2">
                 <span className="text-[10px] text-[var(--fb-text-secondary)] uppercase font-bold">
-                  Role Distribution
+                  {t.overview_role_distribution}
                 </span>
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between p-2 rounded-lg bg-[var(--fb-bg)] border border-[var(--fb-border)]">
-                    <span className="text-[var(--role-coordinator)] font-semibold">Coordinators</span>
+                    <span className="text-[var(--role-coordinator)] font-semibold">{t.overview_coordinators}</span>
                     <strong className="font-mono text-[var(--fb-text-primary)]">
                       {nodes.filter((n) => n.role === "coordinator").length}
                     </strong>
                   </div>
                   <div className="flex items-center justify-between p-2 rounded-lg bg-[var(--fb-bg)] border border-[var(--fb-border)]">
-                    <span className="text-[var(--role-consolidator)] font-semibold">Consolidators</span>
+                    <span className="text-[var(--role-consolidator)] font-semibold">{t.overview_consolidators}</span>
                     <strong className="font-mono text-[var(--fb-text-primary)]">
                       {nodes.filter((n) => n.role === "consolidator").length}
                     </strong>
                   </div>
                   <div className="flex items-center justify-between p-2 rounded-lg bg-[var(--fb-bg)] border border-[var(--fb-border)]">
-                    <span className="text-[var(--role-distributor)] font-semibold">Distributors</span>
+                    <span className="text-[var(--role-distributor)] font-semibold">{t.overview_distributors}</span>
                     <strong className="font-mono text-[var(--fb-text-primary)]">
                       {nodes.filter((n) => n.role === "distributor").length}
                     </strong>
                   </div>
                   <div className="flex items-center justify-between p-2 rounded-lg bg-[var(--fb-bg)] border border-[var(--fb-border)]">
-                    <span className="text-[var(--role-transit)] font-semibold">Transit Intermediaries</span>
+                    <span className="text-[var(--role-transit)] font-semibold">{t.overview_transit}</span>
                     <strong className="font-mono text-[var(--fb-text-primary)]">
                       {nodes.filter((n) => n.role === "transit").length}
                     </strong>
                   </div>
                   <div className="flex items-center justify-between p-2 rounded-lg bg-[var(--fb-bg)] border border-[var(--fb-border)]">
-                    <span className="text-[var(--role-terminal)] font-semibold">Terminal Sinks</span>
+                    <span className="text-[var(--role-terminal)] font-semibold">{t.overview_terminal}</span>
                     <strong className="font-mono text-[var(--fb-text-primary)]">
                       {nodes.filter((n) => n.role === "terminal").length}
                     </strong>
                   </div>
                   <div className="flex items-center justify-between p-2 rounded-lg bg-[var(--fb-bg)] border border-[var(--fb-border)]">
-                    <span className="text-[var(--role-peripheral)] font-semibold">Peripheral</span>
+                    <span className="text-[var(--role-peripheral)] font-semibold">{t.overview_peripheral}</span>
                     <strong className="font-mono text-[var(--fb-text-primary)]">
                       {nodes.filter((n) => n.role === "peripheral").length}
                     </strong>
@@ -503,25 +516,25 @@ export default function AnalystWorkspace() {
 
               <div className="space-y-2 pt-2 border-t border-[var(--fb-border)]">
                 <span className="text-[10px] text-[var(--fb-text-secondary)] uppercase font-bold">
-                  Network Properties
+                  {t.overview_network_props}
                 </span>
                 <div className="space-y-1 text-xs text-[var(--fb-text-secondary)]">
                   <div className="flex justify-between">
-                    <span>Seed Accounts:</span>
+                    <span>{t.overview_seed_accounts}</span>
                     <strong className="text-[var(--fb-text-primary)] font-mono">
                       {nodes.filter((n) => n.is_seed).length}
                     </strong>
                   </div>
                   <div className="flex justify-between">
-                    <span>Louvain Clusters:</span>
+                    <span>{t.overview_louvain_clusters}</span>
                     <strong className="text-[var(--fb-text-primary)] font-mono">{clusters.length}</strong>
                   </div>
                   <div className="flex justify-between">
-                    <span>Transaction Edges:</span>
+                    <span>{t.overview_tx_edges}</span>
                     <strong className="text-[var(--fb-text-primary)] font-mono">{edges.length.toLocaleString()}</strong>
                   </div>
                   <div className="flex justify-between">
-                    <span>Hop-4 Truncated Sinks:</span>
+                    <span>{t.overview_hop4_sinks}</span>
                     <strong className="text-[var(--fb-text-primary)] font-mono">
                       {nodes.filter((n) => n.truncated_by_depth).length}
                     </strong>
@@ -532,23 +545,23 @@ export default function AnalystWorkspace() {
               {/* Advanced Patterns */}
               <div className="space-y-2 pt-2 border-t border-[var(--fb-border)]">
                 <span className="text-[10px] text-[var(--fb-text-secondary)] uppercase font-bold">
-                  Advanced Flow Patterns
+                  {t.overview_advanced_patterns}
                 </span>
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between p-2 rounded-lg bg-[var(--fb-bg)] border border-[var(--fb-border)]">
-                    <span className="text-purple-700 dark:text-purple-400 font-semibold">Circular Flow Loops</span>
+                    <span className="text-purple-700 dark:text-purple-400 font-semibold">{t.overview_circular_loops}</span>
                     <strong className="font-mono text-[var(--fb-text-primary)]">
                       {nodes.filter((n) => n.in_cycle).length}
                     </strong>
                   </div>
                   <div className="flex items-center justify-between p-2 rounded-lg bg-[var(--fb-bg)] border border-[var(--fb-border)]">
-                    <span className="text-blue-700 dark:text-blue-400 font-semibold">Rapid Transit (&lt;48h)</span>
+                    <span className="text-blue-700 dark:text-blue-400 font-semibold">{t.overview_rapid_transit}</span>
                     <strong className="font-mono text-[var(--fb-text-primary)]">
                       {nodes.filter((n) => n.rapid_transit).length}
                     </strong>
                   </div>
                   <div className="flex items-center justify-between p-2 rounded-lg bg-[var(--fb-bg)] border border-[var(--fb-border)]">
-                    <span className="text-amber-700 dark:text-amber-400 font-semibold">Structuring Risk</span>
+                    <span className="text-amber-700 dark:text-amber-400 font-semibold">{t.overview_structuring_risk}</span>
                     <strong className="font-mono text-[var(--fb-text-primary)]">
                       {nodes.filter((n) => n.structuring_risk).length}
                     </strong>
@@ -560,32 +573,32 @@ export default function AnalystWorkspace() {
               <div className="space-y-2 pt-2 border-t border-[var(--fb-border)]">
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] text-[var(--fb-text-secondary)] uppercase font-bold">
-                    Disruption Simulation
+                    {t.overview_disruption_title}
                   </span>
                   <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 border border-emerald-300">
-                    Choke Point Impact
+                    {t.overview_disruption_badge}
                   </span>
                 </div>
                 <p className="text-[10px] text-[var(--fb-text-secondary)] leading-tight">
-                  Simulates network fragmentation if law enforcement freezes key bridge accounts.
+                  {t.overview_disruption_desc}
                 </p>
                 <div className="p-2.5 rounded-xl bg-[var(--fb-bg)] border border-[var(--fb-border)] space-y-2 text-[11px]">
                   <div>
-                    <span className="text-[var(--fb-text-secondary)]">Intact Network:</span>{" "}
-                    <strong className="text-[var(--fb-text-primary)] font-mono">1,877 nodes</strong> (35 components)
+                    <span className="text-[var(--fb-text-secondary)]">{t.overview_intact_network}</span>{" "}
+                    <strong className="text-[var(--fb-text-primary)] font-mono">{t.overview_intact_detail}</strong>
                   </div>
                   <div className="pt-1.5 border-t border-[var(--fb-border)]">
-                    <div className="text-[var(--fb-text-secondary)]">If Top 5 Coordinators Frozen:</div>
+                    <div className="text-[var(--fb-text-secondary)]">{t.overview_freeze_top5}</div>
                     <div className="flex justify-between font-semibold text-[var(--fb-text-primary)] mt-0.5">
-                      <span>Network splits into:</span>
-                      <span className="font-mono text-emerald-700 font-bold">129 fragments</span>
+                      <span>{t.overview_splits_into}</span>
+                      <span className="font-mono text-emerald-700 font-bold">{t.overview_fragments_5}</span>
                     </div>
                   </div>
                   <div className="pt-1.5 border-t border-[var(--fb-border)]">
-                    <div className="text-[var(--fb-text-secondary)]">If Top 10 Coordinators Frozen:</div>
+                    <div className="text-[var(--fb-text-secondary)]">{t.overview_freeze_top10}</div>
                     <div className="flex justify-between font-semibold text-[var(--fb-text-primary)] mt-0.5">
-                      <span>Network splits into:</span>
-                      <span className="font-mono text-emerald-700 font-bold">228 fragments</span>
+                      <span>{t.overview_splits_into}</span>
+                      <span className="font-mono text-emerald-700 font-bold">{t.overview_fragments_10}</span>
                     </div>
                   </div>
                 </div>
@@ -596,14 +609,14 @@ export default function AnalystWorkspace() {
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] text-[var(--fb-text-secondary)] uppercase font-bold flex items-center gap-1.5">
                     <BarChart3 className="w-3 h-3 text-[var(--fb-accent-dark)]" />
-                    Threshold Sensitivity (±20% / ±40%)
+                    {t.overview_sensitivity_title}
                   </span>
                   <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-blue-100 text-blue-800 border border-blue-300">
-                    Criteria Robustness
+                    {t.overview_sensitivity_badge}
                   </span>
                 </div>
                 <p className="text-[10px] text-[var(--fb-text-secondary)] leading-tight">
-                  Proves thresholds sit in stable topology plateaus rather than arbitrary cutoff boundaries.
+                  {t.overview_sensitivity_desc}
                 </p>
 
                 {/* Role Tabs */}
@@ -627,8 +640,8 @@ export default function AnalystWorkspace() {
                 {sensitivityData && sensitivityData[activeSensitivityRole] ? (
                   <div className="p-2.5 rounded-xl bg-[var(--fb-bg)] border border-[var(--fb-border)] space-y-2">
                     <div className="flex justify-between text-[10px] text-[var(--fb-text-secondary)]">
-                      <span>Threshold ({sensitivityData[activeSensitivityRole].threshold_field})</span>
-                      <span>Flagged Accounts</span>
+                      <span>{t.overview_sensitivity_threshold} ({sensitivityData[activeSensitivityRole].threshold_field})</span>
+                      <span>{t.overview_sensitivity_flagged}</span>
                     </div>
 
                     <div className="space-y-1.5">
@@ -669,7 +682,7 @@ export default function AnalystWorkspace() {
                   </div>
                 ) : (
                   <div className="text-[10px] text-[var(--fb-text-secondary)] p-3 text-center">
-                    Loading sensitivity metrics...
+                    {t.loading_sensitivity}
                   </div>
                 )}
               </div>
@@ -679,14 +692,14 @@ export default function AnalystWorkspace() {
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] text-[var(--fb-text-secondary)] uppercase font-bold flex items-center gap-1.5">
                     <ClipboardList className="w-3 h-3 text-emerald-600" />
-                    Data Completeness &amp; Next Inquiries
+                    {t.overview_data_gaps_title}
                   </span>
                   <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-purple-100 text-purple-800 border border-purple-300">
-                    Oversight Audit
+                    {t.overview_data_gaps_badge}
                   </span>
                 </div>
                 <p className="text-[10px] text-[var(--fb-text-secondary)] leading-tight">
-                  Actionable follow-up inquiries to eliminate graph boundaries and unobserved transaction channels.
+                  {t.overview_data_gaps_desc}
                 </p>
 
                 <div className="space-y-2">
@@ -698,7 +711,7 @@ export default function AnalystWorkspace() {
                             {gap.category}
                           </span>
                           <span className="px-1.5 py-0.2 rounded text-[9px] font-mono font-bold bg-amber-100 text-amber-900 border border-amber-300 shrink-0">
-                            {gap.affected_count} affected
+                            {gap.affected_count} {t.overview_affected}
                           </span>
                         </div>
                         <p className="text-[10px] text-[var(--fb-text-secondary)] leading-tight">
@@ -707,7 +720,7 @@ export default function AnalystWorkspace() {
                         <div className="p-2 rounded-lg bg-[var(--fb-surface)] border border-[var(--fb-border)] space-y-1.5">
                           <div className="flex items-center justify-between">
                             <span className="text-[9px] font-bold uppercase tracking-wider text-[var(--fb-accent-dark)]">
-                              Recommended Inquiry
+                              {t.overview_recommended_inquiry}
                             </span>
                             <button
                               onClick={() => copyGapRequest(idx, gap.recommended_request)}
@@ -715,7 +728,7 @@ export default function AnalystWorkspace() {
                               title="Copy inquiry text to clipboard"
                             >
                               {copiedGaps[idx] ? <Check className="w-2.5 h-2.5 text-emerald-600" /> : <Copy className="w-2.5 h-2.5" />}
-                              <span>{copiedGaps[idx] ? "Copied" : "Copy"}</span>
+                              <span>{copiedGaps[idx] ? t.copied_btn : t.copy_btn}</span>
                             </button>
                           </div>
                           <p className="text-[10px] text-[var(--fb-text-primary)] font-mono leading-tight">
@@ -726,7 +739,7 @@ export default function AnalystWorkspace() {
                     ))
                   ) : (
                     <div className="text-[10px] text-[var(--fb-text-secondary)] p-3 text-center">
-                      Loading data completeness audit...
+                      {t.loading_data_gaps}
                     </div>
                   )}
                 </div>
@@ -797,9 +810,9 @@ export default function AnalystWorkspace() {
                   <HelpCircle className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold">Freedom Bank AML — Rule Trace Analysis</h3>
+                  <h3 className="text-sm font-bold">{t.explain_modal_title}</h3>
                   <p className="text-[11px] text-[var(--fb-text-secondary)]">
-                    Sequential evaluation hierarchy (first match wins) • Substituted thresholds
+                    {t.explain_modal_subtitle}
                   </p>
                 </div>
               </div>
@@ -829,12 +842,12 @@ export default function AnalystWorkspace() {
                   {/* Account Badge Card */}
                   <div className="p-3 rounded-xl bg-[var(--fb-bg)] border border-[var(--fb-border)] flex items-center justify-between">
                     <div>
-                      <div className="text-[10px] text-[var(--fb-text-secondary)] uppercase font-semibold">Account GID</div>
+                      <div className="text-[10px] text-[var(--fb-text-secondary)] uppercase font-semibold">{t.explain_account_gid}</div>
                       <div className="font-mono text-sm font-bold text-[var(--fb-text-primary)]">{explainResult.gid}</div>
                     </div>
                     <div className="text-right flex items-center gap-2">
                       <div>
-                        <div className="text-[10px] text-[var(--fb-text-secondary)] uppercase font-semibold">Assigned Role</div>
+                        <div className="text-[10px] text-[var(--fb-text-secondary)] uppercase font-semibold">{t.explain_assigned_role}</div>
                         <span
                           className="px-2.5 py-0.5 rounded text-xs uppercase font-extrabold"
                           style={{
@@ -847,7 +860,7 @@ export default function AnalystWorkspace() {
                         </span>
                       </div>
                       <div className="pl-3 border-l border-[var(--fb-border)]">
-                        <div className="text-[10px] text-[var(--fb-text-secondary)] uppercase font-semibold">Priority Score</div>
+                        <div className="text-[10px] text-[var(--fb-text-secondary)] uppercase font-semibold">{t.explain_priority_score}</div>
                         <div className="font-mono font-bold text-xs text-rose-600">
                           {Number(explainResult.priority_score).toFixed(3)}
                         </div>
@@ -858,7 +871,7 @@ export default function AnalystWorkspace() {
                   {/* Sequential Rule Evaluation Steps */}
                   <div className="space-y-2">
                     <span className="text-[11px] font-bold text-[var(--fb-text-secondary)] uppercase tracking-wide">
-                      Sequential Evaluation Chain (Rule 1 → Rule 6)
+                      {t.explain_rule_chain}
                     </span>
                     <div className="space-y-2">
                       {explainResult.rule_trace?.map((step: any, idx: number) => {
@@ -878,16 +891,16 @@ export default function AnalystWorkspace() {
                                   #{idx + 1}
                                 </span>
                                 <span className="uppercase text-[11px] tracking-wider">
-                                  Rule: {step.rule}
+                                  {t.explain_rule_label} {step.rule}
                                 </span>
                               </span>
                               {matched ? (
                                 <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-600 text-white flex items-center gap-1">
-                                  <CheckCircle2 className="w-3 h-3" /> MATCHED — WINNING ROLE
+                                  <CheckCircle2 className="w-3 h-3" /> {t.explain_matched}
                                 </span>
                               ) : (
                                 <span className="px-1.5 py-0.2 rounded text-[10px] text-[var(--fb-text-secondary)] bg-neutral-200 dark:bg-neutral-800">
-                                  Condition not met
+                                  {t.explain_not_met}
                                 </span>
                               )}
                             </div>
@@ -908,14 +921,14 @@ export default function AnalystWorkspace() {
                       <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 space-y-2">
                         <div className="flex items-center justify-between">
                           <span className="text-[10px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">
-                            🎙️ 30-Second Oral Script for Jury
+                            {t.explain_oral_script}
                           </span>
                           <button
                             onClick={() => copyExplainScript(oralSpeech)}
                             className="px-2 py-1 rounded-md text-[10px] font-bold bg-amber-500/20 hover:bg-amber-500/30 text-amber-700 dark:text-amber-300 transition flex items-center gap-1 cursor-pointer"
                           >
                             {copiedScript ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
-                            <span>{copiedScript ? "Copied speech!" : "Copy Oral Script"}</span>
+                            <span>{copiedScript ? t.copied_oral_script : t.copy_oral_script}</span>
                           </button>
                         </div>
                         <p className="text-xs italic text-[var(--fb-text-primary)] font-medium leading-relaxed">
@@ -931,7 +944,7 @@ export default function AnalystWorkspace() {
             {/* Footer */}
             <div className="p-3 border-t border-[var(--fb-border)] bg-[var(--fb-bg)] flex items-center justify-between">
               <span className="text-[10px] text-[var(--fb-text-secondary)] font-mono">
-                CLI Fallback: python -m app.explain_cli {explainResult?.gid || "<gid>"}
+                {t.explain_cli_fallback} python -m app.explain_cli {explainResult?.gid || "<gid>"}
               </span>
               <div className="flex gap-2">
                 {explainResult && (
@@ -944,14 +957,14 @@ export default function AnalystWorkspace() {
                     }}
                     className="px-3 py-1.5 rounded-lg bg-[var(--fb-accent)] text-black font-semibold text-xs transition cursor-pointer"
                   >
-                    Focus on Graph
+                    {t.explain_focus_graph}
                   </button>
                 )}
                 <button
                   onClick={() => setIsExplainOpen(false)}
                   className="px-3 py-1.5 rounded-lg border border-[var(--fb-border)] text-xs font-semibold hover:bg-[var(--fb-border)] transition cursor-pointer"
                 >
-                  Close
+                  {t.explain_close}
                 </button>
               </div>
             </div>

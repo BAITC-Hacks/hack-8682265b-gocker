@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { Bot, Send, Sparkles, Loader2, X } from "lucide-react";
+import { useT } from "@/lib/i18n";
 
 interface AssistantMessage {
   role: "user" | "assistant";
@@ -28,15 +29,10 @@ export default function AssistantPanel({
   externalPrompt,
   onClearExternalPrompt,
 }: AssistantPanelProps) {
+  const { t } = useT();
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
-  const [messages, setMessages] = useState<AssistantMessage[]>([
-    {
-      role: "assistant",
-      content:
-        "Welcome to Freedom Bank Graph Intelligence. Ask questions about flagged nodes, cluster bridges, or high-volume fund pooling.",
-    },
-  ]);
+  const [messages, setMessages] = useState<AssistantMessage[]>([]);
 
   const handleSend = async (questionText?: string) => {
     const q = (questionText || input).trim();
@@ -93,6 +89,18 @@ export default function AssistantPanel({
     }
   }, [externalPrompt, isOpen, onToggle, onClearExternalPrompt]);
 
+  /* Reset welcome message whenever locale changes so it appears in the new language */
+  const { locale } = useT();
+  useEffect(() => {
+    setMessages([
+      {
+        role: "assistant",
+        content: t.assistant_welcome,
+      },
+    ]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [locale]);
+
   return (
     <>
       {/* Floating Trigger Button */}
@@ -102,7 +110,7 @@ export default function AssistantPanel({
           className="fixed bottom-6 right-6 py-2.5 px-4 rounded-full bg-[var(--fb-accent)] hover:bg-[var(--fb-accent-dark)] text-black font-semibold text-xs shadow-lg flex items-center gap-2 transition z-30 cursor-pointer"
         >
           <Bot className="w-4 h-4 text-black" />
-          <span>Ask AI Assistant</span>
+          <span>{t.assistant_btn}</span>
         </button>
       )}
 
@@ -117,13 +125,13 @@ export default function AssistantPanel({
               </div>
               <div>
                 <div className="font-bold text-[var(--fb-text-primary)] flex items-center gap-1.5">
-                  AML AI Assistant
+                  {t.assistant_title}
                   <span className="text-[10px] font-normal px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-800 border border-emerald-300">
-                    Online
+                    {t.assistant_online}
                   </span>
                 </div>
                 <div className="text-[10px] text-[var(--fb-text-secondary)]">
-                  Transaction & network investigator
+                  {t.assistant_subtitle}
                 </div>
               </div>
             </div>
@@ -139,29 +147,29 @@ export default function AssistantPanel({
           {/* Quick Prompt Chips */}
           <div className="p-2.5 bg-[var(--fb-surface)] border-b border-[var(--fb-border)] flex items-center gap-1.5 overflow-x-auto shrink-0">
             <button
-              onClick={() => handleSend("Identify the top 5 highest priority targets for immediate AML review")}
+              onClick={() => handleSend(t.assistant_prompt_top5)}
               className="px-2 py-1 rounded-md bg-[var(--fb-bg)] border border-[var(--fb-border)] hover:border-[var(--fb-accent-dark)] text-[var(--fb-text-primary)] whitespace-nowrap text-[11px] flex items-center gap-1 transition"
             >
-              <Sparkles className="w-3 h-3 text-[var(--role-consolidator)]" /> Top Targets
+              <Sparkles className="w-3 h-3 text-[var(--role-consolidator)]" /> {t.assistant_chip_top}
             </button>
             <button
-              onClick={() => handleSend("Explain the coordinator nodes bridging multiple clusters")}
+              onClick={() => handleSend(t.assistant_prompt_coordinators)}
               className="px-2 py-1 rounded-md bg-[var(--fb-bg)] border border-[var(--fb-border)] hover:border-[var(--fb-accent-dark)] text-[var(--fb-text-primary)] whitespace-nowrap text-[11px] flex items-center gap-1 transition"
             >
-              <Sparkles className="w-3 h-3 text-[var(--role-coordinator)]" /> Coordinators
+              <Sparkles className="w-3 h-3 text-[var(--role-coordinator)]" /> {t.assistant_chip_coordinators}
             </button>
             <button
-              onClick={() => handleSend("Find accounts acting as fund consolidators with low pass-through")}
+              onClick={() => handleSend(t.assistant_prompt_consolidators)}
               className="px-2 py-1 rounded-md bg-[var(--fb-bg)] border border-[var(--fb-border)] hover:border-[var(--fb-accent-dark)] text-[var(--fb-text-primary)] whitespace-nowrap text-[11px] flex items-center gap-1 transition"
             >
-              <Sparkles className="w-3 h-3 text-[var(--role-distributor)]" /> Consolidators
+              <Sparkles className="w-3 h-3 text-[var(--role-distributor)]" /> {t.assistant_chip_consolidators}
             </button>
             {selectedGid && (
               <button
                 onClick={() => handleSend(`Analyze account GID ${selectedGid} and its direct money flow network`)}
                 className="px-2 py-1 rounded-md bg-[var(--fb-accent)]/20 text-[var(--fb-accent-dark)] border border-[var(--fb-accent-dark)]/40 whitespace-nowrap text-[11px] font-mono font-semibold"
               >
-                Inspect #{String(selectedGid).slice(-6)}
+                {t.assistant_inspect ? `${t.assistant_inspect}` : "Inspect #"}{String(selectedGid).slice(-6)}
               </button>
             )}
           </div>
@@ -178,14 +186,14 @@ export default function AssistantPanel({
                 }`}
               >
                 <div className="text-[10px] font-bold text-[var(--fb-text-secondary)] mb-1 flex items-center gap-1">
-                  {m.role === "user" ? "Analyst" : "Assistant"}
+                  {m.role === "user" ? t.assistant_role_user : t.assistant_role_assistant}
                 </div>
                 <div className="whitespace-pre-wrap text-xs">{m.content}</div>
 
                 {/* Clickable GIDs */}
                 {m.mentioned_gids && m.mentioned_gids.length > 0 && (
                   <div className="flex flex-wrap gap-1 mt-2.5 pt-2 border-t border-[var(--fb-border)]">
-                    <span className="text-[10px] text-[var(--fb-text-secondary)] self-center">Focus Account:</span>
+                    <span className="text-[10px] text-[var(--fb-text-secondary)] self-center">{t.assistant_focus_account}</span>
                     {m.mentioned_gids.map((gid) => (
                       <button
                         key={gid}
@@ -202,7 +210,7 @@ export default function AssistantPanel({
             {loading && (
               <div className="flex items-center gap-2 text-[var(--fb-text-secondary)] text-xs p-2">
                 <Loader2 className="w-4 h-4 animate-spin text-[var(--fb-accent-dark)]" />
-                Querying graph intelligence...
+                {t.loading_querying}
               </div>
             )}
           </div>
@@ -217,7 +225,7 @@ export default function AssistantPanel({
           >
             <input
               type="text"
-              placeholder="Ask a question about accounts or flows..."
+              placeholder={t.assistant_placeholder}
               value={input}
               onChange={(e) => setInput(e.target.value)}
               disabled={loading}

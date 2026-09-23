@@ -1,0 +1,220 @@
+import type { Translations } from "./en";
+
+const ru: Translations = {
+  /* ── Brand ── */
+  brand: "FREEDOM BANK",
+  brand_product: "MONEY GRAPH",
+
+  /* ── Header / Nav ── */
+  tab_queue: "Очередь расследований",
+  tab_clusters: "Обозреватель кластеров",
+  tab_graph: "Граф сети",
+
+  kpi_nodes: "Узлы",
+  kpi_high_priority: "Высокий приоритет (≥0.5)",
+  kpi_total_turnover: "Общий оборот",
+
+  search_placeholder: "Поиск по GID...",
+  explain_gid_btn: "Объяснить GID",
+  explain_gid_title: "Объяснение GID счёта",
+  explain_gid_placeholder: "Введите 18-значный GID...",
+  explain_gid_submit: "Трассировка правил ПОД/ФТ",
+  recompute_btn: "Пересчитать",
+  recomputing_btn: "Пересчёт...",
+  upload_data_btn: "Загрузить данные",
+  case_label: "Дело:",
+  case_baseline: "Базовый набор (81 сид)",
+  lang_toggle: "EN",
+
+  /* ── Loading states ── */
+  loading_network: "Загрузка финансовой сети…",
+  loading_recomputing: "Пересчёт графа и метрик ролей…",
+  loading_sensitivity: "Загрузка показателей чувствительности...",
+  loading_data_gaps: "Загрузка аудита полноты данных...",
+  loading_querying: "Запрос к интеллекту графа...",
+  loading_evaluating: "Оценка цепочки правил для счёта...",
+
+  /* ── Overview Sidebar ── */
+  overview_title: "Обзор сети",
+  overview_role_distribution: "Распределение ролей",
+  overview_coordinators: "Координаторы",
+  overview_consolidators: "Консолидаторы",
+  overview_distributors: "Дистрибьюторы",
+  overview_transit: "Транзитные посредники",
+  overview_terminal: "Терминальные стоки",
+  overview_peripheral: "Периферийные",
+
+  overview_network_props: "Свойства сети",
+  overview_seed_accounts: "Сид-счета:",
+  overview_louvain_clusters: "Кластеры Лувена:",
+  overview_tx_edges: "Транзакционные рёбра:",
+  overview_hop4_sinks: "Обрезанные стоки (глубина 4):",
+
+  overview_advanced_patterns: "Расширенные паттерны потоков",
+  overview_circular_loops: "Циклические потоки",
+  overview_rapid_transit: "Быстрый транзит (<48ч)",
+  overview_structuring_risk: "Риск структурирования",
+
+  overview_disruption_title: "Симуляция разрушения",
+  overview_disruption_badge: "Воздействие на узкие места",
+  overview_disruption_desc:
+    "Симулирует фрагментацию сети при заморозке ключевых мостовых счетов.",
+  overview_intact_network: "Целостная сеть:",
+  overview_intact_detail: "1 877 узлов (35 компонентов)",
+  overview_freeze_top5: "При заморозке топ-5 координаторов:",
+  overview_freeze_top10: "При заморозке топ-10 координаторов:",
+  overview_splits_into: "Сеть разделяется на:",
+  overview_fragments_5: "129 фрагментов",
+  overview_fragments_10: "228 фрагментов",
+
+  overview_sensitivity_title: "Чувствительность порогов (\u00b120% / \u00b140%)",
+  overview_sensitivity_badge: "Устойчивость критериев",
+  overview_sensitivity_desc:
+    "Подтверждает, что пороги находятся на стабильных плато топологии, а не на произвольных границах.",
+  overview_sensitivity_threshold: "Порог",
+  overview_sensitivity_flagged: "Помеченные счета",
+
+  overview_data_gaps_title: "Полнота данных и следующие запросы",
+  overview_data_gaps_badge: "Аудит надзора",
+  overview_data_gaps_desc:
+    "Практические запросы для устранения границ графа и неотслеживаемых каналов транзакций.",
+  overview_affected: "затронуто",
+  overview_recommended_inquiry: "Рекомендуемый запрос",
+  copy_btn: "Копировать",
+  copied_btn: "Скопировано",
+
+  /* ── Explain GID Modal ── */
+  explain_modal_title: "Freedom Bank ПОД/ФТ \u2014 Анализ трассировки правил",
+  explain_modal_subtitle:
+    "Последовательная иерархия оценки (первое совпадение побеждает) \u2022 Подставленные пороги",
+  explain_account_gid: "GID счёта",
+  explain_assigned_role: "Назначенная роль",
+  explain_priority_score: "Приоритетный балл",
+  explain_rule_chain: "Последовательная цепочка оценки (Правило 1 \u2192 Правило 6)",
+  explain_rule_label: "Правило:",
+  explain_matched: "СОВПАЛО \u2014 ПОБЕДИВШАЯ РОЛЬ",
+  explain_not_met: "Условие не выполнено",
+  explain_oral_script: "\uD83C\uDFA4 30-секундный устный скрипт для суда",
+  copy_oral_script: "Скопировать скрипт",
+  copied_oral_script: "Скопировано!",
+  explain_focus_graph: "Показать на графе",
+  explain_close: "Закрыть",
+  explain_cli_fallback: "CLI запрос:",
+
+  /* ── OnboardingModal ── */
+  onboarding_title: "Добро пожаловать в Money Graph",
+  onboarding_subtitle: "Рабочее пространство ПОД/ФТ расследований Freedom Bank",
+  onboarding_step1_title: "Начните с очереди приоритетов",
+  onboarding_step1_desc:
+    "Просмотрите топ помеченных кандидатов, отсортированных по топологической центральности и объёму оборота. Сосредоточьтесь прежде всего на координаторах и консолидаторах с высокой достоверностью.",
+  onboarding_step2_title: "Откройте кластер интереса",
+  onboarding_step2_desc:
+    "Используйте карту сообществ для перехода непосредственно в целевые подграфы вместо отображения всей сети из 2 248 узлов.",
+  onboarding_step3_title: "Кликните на узел для просмотра связей",
+  onboarding_step3_desc:
+    "Прямые 1-шаговые связи подсвечиваются, периферийный шум затухает. Изучите доказательства роли и проконсультируйтесь с ИИ-ассистентом.",
+  onboarding_start: "Начать расследование",
+
+  /* ── AssistantPanel ── */
+  assistant_welcome:
+    "Добро пожаловать в Graph Intelligence Freedom Bank. Задавайте вопросы о помеченных узлах, мостах кластеров или крупных пулах средств.",
+  assistant_btn: "Спросить ИИ-ассистента",
+  assistant_title: "ИИ-ассистент ПОД/ФТ",
+  assistant_online: "В сети",
+  assistant_subtitle: "Следователь по транзакциям и сети",
+  assistant_chip_top: "Топ цели",
+  assistant_chip_coordinators: "Координаторы",
+  assistant_chip_consolidators: "Консолидаторы",
+  assistant_role_user: "Аналитик",
+  assistant_role_assistant: "Ассистент",
+  assistant_focus_account: "Счёт в фокусе:",
+  assistant_placeholder: "Задайте вопрос о счетах или потоках...",
+  assistant_prompt_top5:
+    "Определите 5 наиболее приоритетных целей для немедленной проверки ПОД/ФТ",
+  assistant_prompt_coordinators:
+    "Объясните узлы-координаторы, связывающие несколько кластеров",
+  assistant_prompt_consolidators:
+    "Найдите счета, действующие как консолидаторы средств с низким транзитом",
+
+  /* ── NodeCard ── */
+  nodecard_critical: "Критический приоритет",
+  nodecard_elevated: "Повышенный приоритет",
+  nodecard_seed: "Сид-счет",
+  nodecard_circular: "Циклический поток",
+  nodecard_rapid_transit: "Быстрый транзит",
+  nodecard_structuring: "Паттерн структурирования",
+  nodecard_ask_ai: "Спросить ИИ",
+  nodecard_explain_role: "Объяснить роль",
+  nodecard_review_status: "Статус проверки дела",
+  nodecard_escalated: "Эскалировано",
+  nodecard_cleared: "Очищено",
+  nodecard_unreviewed: "Не проверено",
+  nodecard_escalate_btn: "Эскалировать",
+  nodecard_clear_btn: "Очистить",
+  nodecard_reset_btn: "Сбросить",
+  nodecard_note_placeholder: "Заметка аналитика (напр. основание для запроса в ведомства)...",
+  nodecard_saved_feedback: "Сохранено в деле",
+  nodecard_saved_with: "Сохранено со списком запросов",
+  nodecard_saving: "Сохранение...",
+  nodecard_save_note: "Сохранить заметку",
+  nodecard_tab_overview: "Обзор",
+  nodecard_tab_flows: "Потоки",
+  nodecard_tab_counterparties: "Контрагенты",
+  nodecard_priority_score: "Приоритетный балл",
+  nodecard_role_confidence: "Достоверность роли",
+  nodecard_role_evidence: "Доказательства роли",
+  nodecard_graph_centrality: "Центральность графа и степень",
+  nodecard_in_degree: "Входящая степень:",
+  nodecard_out_degree: "Исходящая степень:",
+  nodecard_pagerank: "PageRank:",
+  nodecard_pass_through: "Транзит:",
+  nodecard_total_inflow: "Общий приток",
+  nodecard_total_outflow: "Общий отток",
+  nodecard_incoming_payers: "Входящие плательщики",
+  nodecard_outgoing_recipients: "Исходящие получатели",
+  nodecard_click_focus: "Кликните для фокуса",
+  nodecard_no_incoming: "Нет входящих переводов",
+  nodecard_no_outgoing: "Нет исходящих переводов",
+  nodecard_cluster: "Кластер #",
+  nodecard_hop_depth: "Глубина хопа",
+
+  /* ── PriorityTable ── */
+  table_search_placeholder: "Поиск по GID, роли или доказательствам\u2026",
+  table_filter_role: "Все роли",
+  table_filter_risk: "Все уровни риска",
+  table_escalated_only: "Только эскалированные",
+  table_col_rank: "Ранг",
+  table_col_gid: "GID",
+  table_col_role: "Роль",
+  table_col_priority: "Приоритет",
+  table_col_risk: "Флаги риска",
+  table_col_evidence: "Доказательства",
+  table_col_status: "Статус",
+  table_col_actions: "Действия",
+  table_export_pdf: "Экспорт запроса в ведомства",
+  table_exporting: "Экспорт...",
+  table_escalate: "Эскалировать",
+  table_clear: "Очистить",
+  table_view_graph: "Смотреть на графе",
+  table_ask_ai: "Спросить ИИ",
+  table_explain: "Объяснить роль",
+  table_copy_gid: "Скопировать GID",
+  table_no_results: "Нет счетов, соответствующих текущим фильтрам.",
+  table_page_of: "из",
+  table_prev: "Назад",
+  table_next: "Вперёд",
+  table_show_evidence: "Показать доказательства",
+  table_hide_evidence: "Скрыть доказательства",
+  table_risk_critical: "Критический",
+  table_risk_elevated: "Повышенный",
+  table_risk_moderate: "Умеренный",
+  table_unreviewed: "Не проверено",
+  table_escalated: "Эскалировано",
+  table_cleared: "Очищено",
+
+  /* ── Error / misc ── */
+  error_load_graph: "Не удалось загрузить данные графа. Убедитесь, что сервис запущен.",
+  error_no_account: "Счёт с таким GID не найден",
+};
+
+export default ru;

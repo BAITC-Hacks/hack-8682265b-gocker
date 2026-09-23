@@ -18,6 +18,7 @@ import {
   HelpCircle,
 } from "lucide-react";
 import { GraphNode, GraphEdge, ROLE_COLORS } from "./GraphView";
+import { useT } from "@/lib/i18n";
 
 interface NodeCardProps {
   node: GraphNode | null;
@@ -36,6 +37,7 @@ export default function NodeCard({
   onAskAboutNode,
   onExplainNode,
 }: NodeCardProps) {
+  const { t } = useT();
   const [activeTab, setActiveTab] = useState<"overview" | "flows" | "counterparties">("overview");
   const [copied, setCopied] = useState(false);
   const [reviewStatus, setReviewStatus] = useState<"unreviewed" | "escalated" | "cleared">("unreviewed");
@@ -125,35 +127,35 @@ export default function NodeCard({
 
               {isCritical ? (
                 <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-100 text-rose-800 border border-rose-300">
-                  Critical Priority
+                  {t.nodecard_critical}
                 </span>
               ) : isElevated ? (
                 <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-300">
-                  Elevated Priority
+                  {t.nodecard_elevated}
                 </span>
               ) : null}
 
               {node.is_seed && (
                 <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
-                  Seed Account
+                  {t.nodecard_seed}
                 </span>
               )}
 
               {node.in_cycle && (
                 <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-purple-100 text-purple-800 border border-purple-300" title="Account participates in circular money flow or return path">
-                  Circular Flow
+                  {t.nodecard_circular}
                 </span>
               )}
 
               {node.rapid_transit && (
                 <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-800 border border-blue-300" title={`Forwards funds within ${node.turnaround_hours ?? 48} hours`}>
-                  Rapid Transit {node.turnaround_hours !== null && node.turnaround_hours !== undefined ? `(${node.turnaround_hours}h)` : "(<48h)"}
+                  {t.nodecard_rapid_transit} {node.turnaround_hours !== null && node.turnaround_hours !== undefined ? `(${node.turnaround_hours}h)` : "(<48h)"}
                 </span>
               )}
 
               {node.structuring_risk && (
                 <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-400" title="Frequent transactions clustered near 5,000 KZT cutoff">
-                  Structuring Pattern
+                  {t.nodecard_structuring}
                 </span>
               )}
             </div>
@@ -176,7 +178,7 @@ export default function NodeCard({
             </div>
 
             <div className="text-[11px] text-[var(--fb-text-secondary)]">
-              Cluster #{node.cluster_id} • Hop Depth {node.depth}
+              {t.nodecard_cluster}{node.cluster_id} • {t.nodecard_hop_depth} {node.depth}
             </div>
           </div>
 
@@ -195,7 +197,7 @@ export default function NodeCard({
             className="flex-1 py-2 px-3 rounded-xl bg-[var(--fb-accent)] hover:bg-[var(--fb-accent-dark)] text-black font-semibold text-xs transition flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
           >
             <Bot className="w-3.5 h-3.5" />
-            <span>Ask AI</span>
+            <span>{t.nodecard_ask_ai}</span>
           </button>
           {onExplainNode && (
             <button
@@ -204,7 +206,7 @@ export default function NodeCard({
               title="Inspect rule trace for this GID"
             >
               <HelpCircle className="w-3.5 h-3.5 text-[var(--fb-accent-dark)]" />
-              <span>Explain this role</span>
+              <span>{t.nodecard_explain_role}</span>
             </button>
           )}
         </div>
@@ -213,21 +215,21 @@ export default function NodeCard({
         <div className="p-2.5 rounded-xl bg-[var(--fb-surface)] border border-[var(--fb-border)] space-y-2">
           <div className="flex items-center justify-between">
             <span className="text-[10px] uppercase font-bold text-[var(--fb-text-secondary)]">
-              Case Review Status
+              {t.nodecard_review_status}
             </span>
             {reviewStatus === "escalated" ? (
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800 border border-rose-300">
                 <AlertTriangle className="w-2.5 h-2.5 text-rose-600" />
-                Escalated
+                {t.nodecard_escalated}
               </span>
             ) : reviewStatus === "cleared" ? (
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
                 <CheckCircle2 className="w-2.5 h-2.5 text-emerald-600" />
-                Cleared
+                {t.nodecard_cleared}
               </span>
             ) : (
               <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-neutral-100 dark:bg-neutral-800 text-[var(--fb-text-secondary)]">
-                Unreviewed
+                {t.nodecard_unreviewed}
               </span>
             )}
           </div>
@@ -242,7 +244,7 @@ export default function NodeCard({
               }`}
             >
               <AlertTriangle className="w-3 h-3" />
-              <span>Escalate</span>
+              <span>{t.nodecard_escalate_btn}</span>
             </button>
             <button
               onClick={() => handleUpdateStatus("cleared")}
@@ -253,7 +255,7 @@ export default function NodeCard({
               }`}
             >
               <CheckCircle2 className="w-3 h-3" />
-              <span>Clear</span>
+              <span>{t.nodecard_clear_btn}</span>
             </button>
             {reviewStatus !== "unreviewed" && (
               <button
@@ -261,7 +263,7 @@ export default function NodeCard({
                 className="py-1 px-2 text-[10px] text-[var(--fb-text-secondary)] hover:text-[var(--fb-text-primary)] border border-transparent hover:border-[var(--fb-border)] rounded-lg transition cursor-pointer"
                 title="Reset to unreviewed"
               >
-                Reset
+                {t.nodecard_reset_btn}
               </button>
             )}
           </div>
@@ -270,7 +272,7 @@ export default function NodeCard({
             <textarea
               value={reviewNote}
               onChange={(e) => setReviewNote(e.target.value)}
-              placeholder="Analyst note (e.g. basis for law enforcement request)..."
+              placeholder={t.nodecard_note_placeholder}
               rows={2}
               className="w-full text-xs p-2 rounded-lg bg-[var(--fb-bg)] border border-[var(--fb-border)] text-[var(--fb-text-primary)] placeholder-[var(--fb-text-secondary)] focus:outline-none focus:border-[var(--fb-accent-dark)] resize-none"
             />
@@ -278,10 +280,10 @@ export default function NodeCard({
               <span className="text-[10px] text-[var(--fb-text-secondary)]">
                 {noteSavedFeedback ? (
                   <span className="text-emerald-600 font-semibold flex items-center gap-1">
-                    <Check className="w-3 h-3" /> Saved to case record
+                    <Check className="w-3 h-3" /> {t.nodecard_saved_feedback}
                   </span>
                 ) : (
-                  "Saved with request list"
+                  t.nodecard_saved_with
                 )}
               </span>
               <button
@@ -290,7 +292,7 @@ export default function NodeCard({
                 className="py-1 px-2 text-[10px] font-semibold rounded-md bg-[var(--fb-border)] hover:bg-[var(--fb-accent)] hover:text-black transition flex items-center gap-1 cursor-pointer disabled:opacity-50"
               >
                 <Save className="w-3 h-3" />
-                <span>{savingReview ? "Saving..." : "Save Note"}</span>
+                <span>{savingReview ? t.nodecard_saving : t.nodecard_save_note}</span>
               </button>
             </div>
           </div>
@@ -306,7 +308,7 @@ export default function NodeCard({
                 : "text-[var(--fb-text-secondary)] hover:text-[var(--fb-text-primary)]"
             }`}
           >
-            Overview
+            {t.nodecard_tab_overview}
           </button>
           <button
             onClick={() => setActiveTab("flows")}
@@ -316,7 +318,7 @@ export default function NodeCard({
                 : "text-[var(--fb-text-secondary)] hover:text-[var(--fb-text-primary)]"
             }`}
           >
-            Flows ({incoming.length + outgoing.length})
+            {t.nodecard_tab_flows} ({incoming.length + outgoing.length})
           </button>
           <button
             onClick={() => setActiveTab("counterparties")}
@@ -326,7 +328,7 @@ export default function NodeCard({
                 : "text-[var(--fb-text-secondary)] hover:text-[var(--fb-text-primary)]"
             }`}
           >
-            Counterparties
+            {t.nodecard_tab_counterparties}
           </button>
         </div>
       </div>
@@ -339,7 +341,7 @@ export default function NodeCard({
             <div className="grid grid-cols-2 gap-2">
               <div className="p-3 rounded-xl bg-[var(--fb-bg)] border border-[var(--fb-border)]">
                 <span className="text-[10px] text-[var(--fb-text-secondary)] uppercase font-semibold">
-                  Priority Score
+                  {t.nodecard_priority_score}
                 </span>
                 <div className="text-xl font-bold font-mono text-[var(--role-consolidator)] mt-1">
                   {node.priority_score.toFixed(3)}
@@ -354,7 +356,7 @@ export default function NodeCard({
 
               <div className="p-3 rounded-xl bg-[var(--fb-bg)] border border-[var(--fb-border)]">
                 <span className="text-[10px] text-[var(--fb-text-secondary)] uppercase font-semibold">
-                  Role Confidence
+                  {t.nodecard_role_confidence}
                 </span>
                 <div className="text-xl font-bold font-mono text-[var(--role-coordinator)] mt-1">
                   {node.role_score.toFixed(3)}
@@ -373,7 +375,7 @@ export default function NodeCard({
               <div className="flex items-center justify-between">
                 <span className="text-[10px] text-[var(--fb-text-primary)] font-bold uppercase tracking-wider flex items-center gap-1.5">
                   <ShieldAlert className="w-3.5 h-3.5 text-amber-500" />
-                  Role Evidence
+                  {t.nodecard_role_evidence}
                 </span>
               </div>
               <p className="text-[var(--fb-text-secondary)] text-xs leading-relaxed">
@@ -384,26 +386,26 @@ export default function NodeCard({
             {/* Metrics Breakdown */}
             <div className="p-3.5 rounded-xl bg-[var(--fb-bg)] border border-[var(--fb-border)] space-y-2">
               <span className="text-[10px] text-[var(--fb-text-secondary)] font-bold uppercase tracking-wider">
-                Graph Centrality & Degree
+                {t.nodecard_graph_centrality}
               </span>
 
               <div className="grid grid-cols-2 gap-y-2 text-xs">
                 <div>
-                  <span className="text-[var(--fb-text-secondary)]">In-degree:</span>{" "}
+                  <span className="text-[var(--fb-text-secondary)]">{t.nodecard_in_degree}</span>{" "}
                   <strong className="text-[var(--fb-text-primary)] font-mono">{node.in_deg}</strong>
                 </div>
                 <div>
-                  <span className="text-[var(--fb-text-secondary)]">Out-degree:</span>{" "}
+                  <span className="text-[var(--fb-text-secondary)]">{t.nodecard_out_degree}</span>{" "}
                   <strong className="text-[var(--fb-text-primary)] font-mono">{node.out_deg}</strong>
                 </div>
                 <div>
-                  <span className="text-[var(--fb-text-secondary)]">PageRank:</span>{" "}
+                  <span className="text-[var(--fb-text-secondary)]">{t.nodecard_pagerank}</span>{" "}
                   <strong className="text-[var(--fb-text-primary)] font-mono">
                     {node.pagerank.toExponential(2)}
                   </strong>
                 </div>
                 <div>
-                  <span className="text-[var(--fb-text-secondary)]">Pass-Through:</span>{" "}
+                  <span className="text-[var(--fb-text-secondary)]">{t.nodecard_pass_through}</span>{" "}
                   <strong className="text-[var(--fb-text-primary)] font-mono">
                     {node.pass_through !== null ? `${(node.pass_through * 100).toFixed(1)}%` : "N/A"}
                   </strong>
@@ -417,7 +419,7 @@ export default function NodeCard({
           <div className="space-y-3">
             <div className="p-3 rounded-xl bg-[var(--fb-bg)] border border-[var(--fb-border)] space-y-1">
               <div className="text-[10px] text-[var(--fb-text-secondary)] uppercase font-semibold flex items-center gap-1">
-                <ArrowDownLeft className="w-3.5 h-3.5 text-emerald-600" /> Total Inflow
+                <ArrowDownLeft className="w-3.5 h-3.5 text-emerald-600" /> {t.nodecard_total_inflow}
               </div>
               <div className="text-sm font-bold font-mono text-[var(--fb-text-primary)]">
                 {node.in_kzt.toLocaleString()} KZT
@@ -426,7 +428,7 @@ export default function NodeCard({
 
             <div className="p-3 rounded-xl bg-[var(--fb-bg)] border border-[var(--fb-border)] space-y-1">
               <div className="text-[10px] text-[var(--fb-text-secondary)] uppercase font-semibold flex items-center gap-1">
-                <ArrowUpRight className="w-3.5 h-3.5 text-cyan-600" /> Total Outflow
+                <ArrowUpRight className="w-3.5 h-3.5 text-cyan-600" /> {t.nodecard_total_outflow}
               </div>
               <div className="text-sm font-bold font-mono text-[var(--fb-text-primary)]">
                 {node.out_kzt.toLocaleString()} KZT
@@ -440,8 +442,8 @@ export default function NodeCard({
             {/* Incoming */}
             <div>
               <div className="text-[11px] font-bold text-emerald-700 uppercase tracking-wider mb-1.5 flex items-center justify-between">
-                <span>Incoming Payers ({incoming.length})</span>
-                <span className="text-[10px] text-[var(--fb-text-secondary)] font-normal">Click to focus</span>
+                <span>{t.nodecard_incoming_payers} ({incoming.length})</span>
+                <span className="text-[10px] text-[var(--fb-text-secondary)] font-normal">{t.nodecard_click_focus}</span>
               </div>
               <div className="space-y-1 max-h-48 overflow-y-auto pr-1">
                 {incoming.map((e) => (
@@ -460,7 +462,7 @@ export default function NodeCard({
                 ))}
                 {incoming.length === 0 && (
                   <div className="text-[var(--fb-text-secondary)] text-xs py-2 text-center">
-                    No incoming transfers
+                    {t.nodecard_no_incoming}
                   </div>
                 )}
               </div>
@@ -469,8 +471,8 @@ export default function NodeCard({
             {/* Outgoing */}
             <div className="pt-2 border-t border-[var(--fb-border)]">
               <div className="text-[11px] font-bold text-cyan-700 uppercase tracking-wider mb-1.5 flex items-center justify-between">
-                <span>Outgoing Recipients ({outgoing.length})</span>
-                <span className="text-[10px] text-[var(--fb-text-secondary)] font-normal">Click to focus</span>
+                <span>{t.nodecard_outgoing_recipients} ({outgoing.length})</span>
+                <span className="text-[10px] text-[var(--fb-text-secondary)] font-normal">{t.nodecard_click_focus}</span>
               </div>
               <div className="space-y-1 max-h-48 overflow-y-auto pr-1">
                 {outgoing.map((e) => (
@@ -489,7 +491,7 @@ export default function NodeCard({
                 ))}
                 {outgoing.length === 0 && (
                   <div className="text-[var(--fb-text-secondary)] text-xs py-2 text-center">
-                    No outgoing transfers
+                    {t.nodecard_no_outgoing}
                   </div>
                 )}
               </div>

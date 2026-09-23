@@ -2,12 +2,14 @@
 
 import React, { useState, useEffect } from "react";
 import { ShieldCheck, ArrowRight, X, ListOrdered, Layers, Eye } from "lucide-react";
+import { useT } from "@/lib/i18n";
 
 interface OnboardingModalProps {
   onDismiss?: () => void;
 }
 
 export default function OnboardingModal({ onDismiss }: OnboardingModalProps) {
+  const { t } = useT();
   const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
@@ -44,10 +46,10 @@ export default function OnboardingModal({ onDismiss }: OnboardingModalProps) {
             </div>
             <div>
               <h2 className="text-base font-bold text-[var(--fb-text-primary)]">
-                Welcome to Money Graph
+                {t.onboarding_title}
               </h2>
               <p className="text-xs text-[var(--fb-text-secondary)]">
-                Freedom Bank AML Investigation Workspace
+                {t.onboarding_subtitle}
               </p>
             </div>
           </div>
@@ -68,10 +70,10 @@ export default function OnboardingModal({ onDismiss }: OnboardingModalProps) {
             <div>
               <div className="text-xs font-semibold text-[var(--fb-text-primary)] flex items-center gap-1.5">
                 <ListOrdered className="w-3.5 h-3.5 text-[var(--fb-accent-dark)]" />
-                Start with the Priority Queue
+                {t.onboarding_step1_title}
               </div>
               <p className="text-xs text-[var(--fb-text-secondary)] mt-0.5 leading-relaxed">
-                Review the top flagged candidates ranked by topology centrality and turnover volume. Focus first on high-confidence coordinators and consolidators.
+                {t.onboarding_step1_desc}
               </p>
             </div>
           </div>
@@ -83,10 +85,10 @@ export default function OnboardingModal({ onDismiss }: OnboardingModalProps) {
             <div>
               <div className="text-xs font-semibold text-[var(--fb-text-primary)] flex items-center gap-1.5">
                 <Layers className="w-3.5 h-3.5 text-[var(--fb-accent-dark)]" />
-                Open a Cluster of Interest
+                {t.onboarding_step2_title}
               </div>
               <p className="text-xs text-[var(--fb-text-secondary)] mt-0.5 leading-relaxed">
-                Navigate via the Community Bubble Map to drill directly into focused subgraphs instead of rendering the entire 2,248-node network.
+                {t.onboarding_step2_desc}
               </p>
             </div>
           </div>
@@ -98,10 +100,10 @@ export default function OnboardingModal({ onDismiss }: OnboardingModalProps) {
             <div>
               <div className="text-xs font-semibold text-[var(--fb-text-primary)] flex items-center gap-1.5">
                 <Eye className="w-3.5 h-3.5 text-[var(--fb-accent-dark)]" />
-                Click a Node to View Connections
+                {t.onboarding_step3_title}
               </div>
               <p className="text-xs text-[var(--fb-text-secondary)] mt-0.5 leading-relaxed">
-                Direct 1-hop connections stay highlighted while peripheral noise dims. Inspect role evidence and consult the AML AI Assistant in the side panel.
+                {t.onboarding_step3_desc}
               </p>
             </div>
           </div>
@@ -113,7 +115,7 @@ export default function OnboardingModal({ onDismiss }: OnboardingModalProps) {
             onClick={handleDismiss}
             className="px-5 py-2 text-xs font-semibold rounded-xl bg-[var(--fb-accent)] text-black hover:bg-[var(--fb-accent-dark)] transition flex items-center gap-2 shadow-sm"
           >
-            <span>Start Investigation</span>
+            <span>{t.onboarding_start}</span>
             <ArrowRight className="w-4 h-4" />
           </button>
         </div>

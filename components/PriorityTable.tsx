@@ -25,6 +25,7 @@ import {
   MoreHorizontal,
 } from "lucide-react";
 import { GraphNode, ROLE_COLORS } from "./GraphView";
+import { useT } from "@/lib/i18n";
 
 export interface ReviewRecord {
   gid: number;
@@ -56,6 +57,7 @@ export default function PriorityTable({
   onSwitchToGraph,
   onExplainNode,
 }: PriorityTableProps) {
+  const { t } = useT();
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState<string>("all");
   const [riskFilter, setRiskFilter] = useState<string>("all");
@@ -318,7 +320,7 @@ export default function PriorityTable({
             }}
             className="px-3 py-1.5 text-xs bg-[var(--fb-surface)] border border-[var(--fb-border)] rounded-lg text-[var(--fb-text-primary)] focus:outline-none focus:border-[var(--fb-accent-dark)] cursor-pointer"
           >
-            <option value="all">All Roles</option>
+            <option value="all">{t.table_filter_role}</option>
             <option value="coordinator">Coordinators</option>
             <option value="consolidator">Consolidators</option>
             <option value="distributor">Distributors</option>
@@ -336,7 +338,7 @@ export default function PriorityTable({
             }}
             className="px-3 py-1.5 text-xs bg-[var(--fb-surface)] border border-[var(--fb-border)] rounded-lg text-[var(--fb-text-primary)] focus:outline-none focus:border-[var(--fb-accent-dark)] cursor-pointer"
           >
-            <option value="all">All Risk Levels</option>
+            <option value="all">{t.table_filter_risk}</option>
             <option value="critical">Critical Risk (Score ≥ 0.50)</option>
             <option value="elevated">Elevated Risk (Score 0.25 - 0.50)</option>
             <option value="moderate">Moderate / Low (Score &lt; 0.25)</option>
@@ -354,7 +356,7 @@ export default function PriorityTable({
               }`}
           >
             <AlertTriangle className="w-3.5 h-3.5 text-rose-500" />
-            <span>Escalated only</span>
+            <span>{t.table_escalated_only}</span>
             <span className="px-1.5 py-0.2 rounded-full bg-rose-500/20 text-rose-600 dark:text-rose-400 text-[10px] font-mono">
               {escalatedCount}
             </span>
@@ -400,15 +402,15 @@ export default function PriorityTable({
           <thead className="bg-[var(--fb-surface)] text-[var(--fb-text-secondary)] uppercase text-[10px] tracking-wider sticky top-0 z-20 border-b border-[var(--fb-border)] shadow-xs">
             <tr>
               <th className="py-3 px-3 font-semibold sticky left-0 bg-[var(--fb-surface)] z-20 w-16 text-center">
-                Rank
+              {t.table_col_rank}
               </th>
               <th className="py-3 px-4 font-semibold sticky left-16 bg-[var(--fb-surface)] z-20 min-w-[200px]">
-                Account GID
+              {t.table_col_gid}
               </th>
-              <th className="py-3 px-4 font-semibold w-28">Role</th>
-              <th className="py-3 px-4 font-semibold min-w-[170px]">Priority Score</th>
-              <th className="py-3 px-4 font-semibold min-w-[140px]">Primary Risk Flag</th>
-              <th className="py-3 px-4 font-semibold text-right w-44">Actions</th>
+              <th className="py-3 px-4 font-semibold w-28">{t.table_col_role}</th>
+              <th className="py-3 px-4 font-semibold min-w-[170px]">{t.table_col_priority}</th>
+              <th className="py-3 px-4 font-semibold min-w-[140px]">{t.table_col_risk}</th>
+              <th className="py-3 px-4 font-semibold text-right w-44">{t.table_col_actions}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[var(--fb-border)]">
@@ -603,7 +605,7 @@ export default function PriorityTable({
                                 className="w-full px-3 py-1.5 text-xs text-[var(--fb-text-primary)] hover:bg-[var(--fb-border)] flex items-center gap-2 cursor-pointer"
                               >
                                 <Eye className="w-3.5 h-3.5 text-blue-500" />
-                                <span>View on Graph</span>
+                                <span>{t.table_view_graph}</span>
                               </button>
                               <button
                                 onClick={(e) => {
@@ -614,7 +616,7 @@ export default function PriorityTable({
                                 className="w-full px-3 py-1.5 text-xs text-[var(--fb-text-primary)] hover:bg-[var(--fb-border)] flex items-center gap-2 cursor-pointer"
                               >
                                 <Bot className="w-3.5 h-3.5 text-[var(--fb-accent-dark)]" />
-                                <span>Ask AI</span>
+                                <span>{t.table_ask_ai}</span>
                               </button>
                               <button
                                 onClick={(e) => {
@@ -625,7 +627,7 @@ export default function PriorityTable({
                                 className="w-full px-3 py-1.5 text-xs text-[var(--fb-text-primary)] hover:bg-[var(--fb-border)] flex items-center gap-2 cursor-pointer"
                               >
                                 <Copy className="w-3.5 h-3.5 text-neutral-400" />
-                                <span>Copy GID</span>
+                                <span>{t.table_copy_gid}</span>
                               </button>
                               <div className="border-t border-[var(--fb-border)] my-1" />
                               {reviewStatus !== "unreviewed" && (
@@ -638,7 +640,7 @@ export default function PriorityTable({
                                   className="w-full px-3 py-1.5 text-xs text-neutral-500 hover:bg-[var(--fb-border)] flex items-center gap-2 cursor-pointer"
                                 >
                                   <XCircle className="w-3.5 h-3.5 text-neutral-400" />
-                                  <span>Reset Status</span>
+                                  <span>{t.nodecard_reset_btn}</span>
                                 </button>
                               )}
                             </div>
@@ -731,7 +733,7 @@ export default function PriorityTable({
             {paginatedNodes.length === 0 && (
               <tr>
                 <td colSpan={6} className="py-12 text-center text-[var(--fb-text-secondary)]">
-                  No accounts found matching your filter criteria.
+                  {t.table_no_results}
                 </td>
               </tr>
             )}
@@ -743,7 +745,7 @@ export default function PriorityTable({
       <div className="flex items-center justify-between pt-4 text-xs text-[var(--fb-text-secondary)] border-t border-[var(--fb-border)] mt-2 shrink-0">
         <div>
           Showing {(page - 1) * pageSize + 1} to{" "}
-          {Math.min(page * pageSize, filteredNodes.length)} of{" "}
+          {Math.min(page * pageSize, filteredNodes.length)} {t.table_page_of}{" "}
           <strong>{filteredNodes.length}</strong> accounts
         </div>
         <div className="flex items-center gap-2">
@@ -752,17 +754,17 @@ export default function PriorityTable({
             disabled={page === 1}
             className="px-3 py-1 rounded-lg border border-[var(--fb-border)] bg-[var(--fb-surface)] disabled:opacity-40 hover:bg-[var(--fb-border)] transition cursor-pointer"
           >
-            Previous
+            {t.table_prev}
           </button>
           <span>
-            Page <strong>{page}</strong> of <strong>{totalPages}</strong>
+            Page <strong>{page}</strong> {t.table_page_of} <strong>{totalPages}</strong>
           </span>
           <button
             onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
             disabled={page === totalPages}
             className="px-3 py-1 rounded-lg border border-[var(--fb-border)] bg-[var(--fb-surface)] disabled:opacity-40 hover:bg-[var(--fb-border)] transition cursor-pointer"
           >
-            Next
+            {t.table_next}
           </button>
         </div>
       </div>
