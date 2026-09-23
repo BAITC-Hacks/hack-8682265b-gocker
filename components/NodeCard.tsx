@@ -204,7 +204,7 @@ export default function NodeCard({
               title="Inspect rule trace for this GID"
             >
               <HelpCircle className="w-3.5 h-3.5 text-[var(--fb-accent-dark)]" />
-              <span>Explain</span>
+              <span>Explain this role</span>
             </button>
           )}
         </div>

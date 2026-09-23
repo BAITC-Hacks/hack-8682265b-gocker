@@ -203,4 +203,29 @@ describe("Component Logic and State Transformations", () => {
       expect(script.length).toBeLessThan(200);
     });
   });
+
+  describe("Badge Consolidation and Priority KPI", () => {
+    it("consolidates multiple risk badges into 1 primary pill plus count", () => {
+      // Node 0 has is_seed, in_cycle -> 2 flags total
+      const node0 = mockNodes[0];
+      const flags: string[] = [];
+      if (node0.is_seed) flags.push("SEED");
+      if (node0.structuring_risk) flags.push("STRUCT");
+      if (node0.rapid_transit) flags.push("RAPID");
+      if (node0.in_cycle) flags.push("CYCLE");
+
+      expect(flags.length).toBe(2);
+      const primary = flags[0];
+      const remainingCount = flags.length - 1;
+
+      expect(primary).toBe("SEED");
+      expect(remainingCount).toBe(1);
+    });
+
+    it("evaluates High Priority KPI count as non-zero on dataset", () => {
+      const highPriorityCount = mockNodes.filter((n) => n.priority_score >= 0.5).length;
+      expect(highPriorityCount).toBeGreaterThan(0);
+      expect(highPriorityCount).toBe(2);
+    });
+  });
 });

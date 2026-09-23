@@ -59,6 +59,7 @@ export default function AnalystWorkspace() {
   const [explainGidInput, setExplainGidInput] = useState("");
   const [explainResult, setExplainResult] = useState<any | null>(null);
   const [isExplainOpen, setIsExplainOpen] = useState(false);
+  const [isExplainPopoverOpen, setIsExplainPopoverOpen] = useState(false);
   const [explainLoading, setExplainLoading] = useState(false);
   const [copiedScript, setCopiedScript] = useState(false);
 
@@ -177,9 +178,13 @@ export default function AnalystWorkspace() {
   }, [nodes, selectedGid]);
 
   // Priority count: nodes with priority_score > 0.7 (or >= 0.5)
+  // High priority count: nodes with priority_score >= 0.5 (or from summary self-check)
   const priorityNodeCount = useMemo(() => {
-    return nodes.filter((n) => n.priority_score > 0.7).length;
-  }, [nodes]);
+    if (summary?.top_priority_count !== undefined) {
+      return summary.top_priority_count;
+    }
+    return nodes.filter((n) => n.priority_score >= 0.5).length;
+  }, [nodes, summary]);
 
   const totalTurnover = useMemo(() => {
     if (summary?.total_turnover_kzt) return summary.total_turnover_kzt;
@@ -198,10 +203,10 @@ export default function AnalystWorkspace() {
       {/* 3-Step First-Time Onboarding Overlay */}
       <OnboardingModal />
 
-      {/* Top Header - Compact */}
-      <header className="h-14 border-b border-[var(--fb-border)] bg-[var(--fb-surface)] px-4 flex items-center justify-between shrink-0 z-30">
-        {/* Brand */}
-        <div className="flex items-center gap-2.5">
+      {/* Top Header - Structured Left-to-Right without wrapping */}
+      <header className="h-14 border-b border-[var(--fb-border)] bg-[var(--fb-surface)] px-4 sm:px-6 flex items-center justify-between shrink-0 z-30 flex-nowrap gap-4 xl:gap-6 min-w-0">
+        {/* 1. Brand */}
+        <div className="flex items-center gap-2.5 shrink-0">
           <div className="w-8 h-8 rounded-lg bg-[var(--fb-accent)] flex items-center justify-center text-black font-extrabold">
             <Network className="w-5 h-5 text-black" />
           </div>
@@ -217,11 +222,11 @@ export default function AnalystWorkspace() {
           </div>
         </div>
 
-        {/* View Mode Tabs */}
-        <nav className="flex items-center p-0.5 rounded-lg bg-[var(--fb-border)]/50 border border-[var(--fb-border)]">
+        {/* 2. Nav Tabs */}
+        <nav className="flex items-center p-0.5 rounded-lg bg-[var(--fb-border)]/50 border border-[var(--fb-border)] shrink-0">
           <button
             onClick={() => setActiveTab("table")}
-            className={`px-3 py-1 text-xs font-semibold rounded-md transition flex items-center gap-1.5 ${
+            className={`px-3 py-1 text-xs font-semibold rounded-md transition flex items-center gap-1.5 cursor-pointer ${
               activeTab === "table"
                 ? "bg-[var(--fb-bg)] text-[var(--fb-text-primary)] shadow-xs"
                 : "text-[var(--fb-text-secondary)] hover:text-[var(--fb-text-primary)]"
@@ -233,7 +238,7 @@ export default function AnalystWorkspace() {
 
           <button
             onClick={() => setActiveTab("clusters")}
-            className={`px-3 py-1 text-xs font-semibold rounded-md transition flex items-center gap-1.5 ${
+            className={`px-3 py-1 text-xs font-semibold rounded-md transition flex items-center gap-1.5 cursor-pointer ${
               activeTab === "clusters"
                 ? "bg-[var(--fb-bg)] text-[var(--fb-text-primary)] shadow-xs"
                 : "text-[var(--fb-text-secondary)] hover:text-[var(--fb-text-primary)]"
@@ -245,7 +250,7 @@ export default function AnalystWorkspace() {
 
           <button
             onClick={() => setActiveTab("graph")}
-            className={`px-3 py-1 text-xs font-semibold rounded-md transition flex items-center gap-1.5 ${
+            className={`px-3 py-1 text-xs font-semibold rounded-md transition flex items-center gap-1.5 cursor-pointer ${
               activeTab === "graph"
                 ? "bg-[var(--fb-bg)] text-[var(--fb-text-primary)] shadow-xs"
                 : "text-[var(--fb-text-secondary)] hover:text-[var(--fb-text-primary)]"
@@ -256,67 +261,108 @@ export default function AnalystWorkspace() {
           </button>
         </nav>
 
-        {/* Compact Metrics & Controls */}
-        <div className="flex items-center gap-3">
+        {/* 3. KPI Cluster */}
+        <div className="hidden lg:flex items-center gap-4 shrink-0">
           {/* Node Count */}
-          <div className="hidden sm:flex flex-col text-right">
+          <div className="flex flex-col text-right">
             <span className="text-[10px] text-[var(--fb-text-secondary)] uppercase font-semibold">Nodes</span>
             <span className="font-mono text-xs font-bold text-[var(--fb-text-primary)]">
               {nodes.length ? nodes.length.toLocaleString() : "—"}
             </span>
           </div>
 
-          <div className="hidden sm:block h-6 w-px bg-[var(--fb-border)]" />
+          <div className="h-6 w-px bg-[var(--fb-border)]" />
 
-          {/* Priority Node Count */}
-          <div className="hidden sm:flex flex-col text-right">
-            <span className="text-[10px] text-[var(--fb-text-secondary)] uppercase font-semibold">Priority (&gt;0.7)</span>
+          {/* High Priority (≥0.5) Node Count */}
+          <div className="flex flex-col text-right">
+            <span className="text-[10px] text-[var(--fb-text-secondary)] uppercase font-semibold">High Priority (≥0.5)</span>
             <span className="font-mono text-xs font-bold text-rose-600">
               {priorityNodeCount}
             </span>
           </div>
 
-          <div className="hidden md:block h-6 w-px bg-[var(--fb-border)]" />
+          <div className="h-6 w-px bg-[var(--fb-border)]" />
 
           {/* Total Turnover */}
-          <div className="hidden md:flex flex-col text-right">
+          <div className="flex flex-col text-right">
             <span className="text-[10px] text-[var(--fb-text-secondary)] uppercase font-semibold">Total Turnover</span>
             <span className="font-mono text-xs font-bold text-[var(--fb-text-primary)]">
               {(totalTurnover / 1_000_000).toFixed(1)}M KZT
             </span>
           </div>
+        </div>
 
-          <div className="h-6 w-px bg-[var(--fb-border)]" />
+        {/* 4. GID Search Box */}
+        <form onSubmit={handleSearchSubmit} className="relative shrink-0">
+          <Search className="w-3.5 h-3.5 absolute left-2.5 top-2 text-[var(--fb-text-secondary)] pointer-events-none" />
+          <input
+            type="text"
+            placeholder="Search GID..."
+            value={searchGidInput}
+            onChange={(e) => setSearchGidInput(e.target.value)}
+            className="w-32 xl:w-44 pl-8 pr-2.5 py-1 text-xs rounded-md bg-[var(--fb-bg)] border border-[var(--fb-border)] text-[var(--fb-text-primary)] placeholder-[var(--fb-text-secondary)] focus:outline-none focus:border-[var(--fb-accent-dark)] font-mono"
+          />
+        </form>
 
-          {/* GID Search Form */}
-          <form onSubmit={handleSearchSubmit} className="relative">
-            <Search className="w-3.5 h-3.5 absolute left-2.5 top-2 text-[var(--fb-text-secondary)]" />
-            <input
-              type="text"
-              placeholder="Search GID..."
-              value={searchGidInput}
-              onChange={(e) => setSearchGidInput(e.target.value)}
-              className="w-28 lg:w-36 pl-8 pr-2 py-1 text-xs rounded-md bg-[var(--fb-bg)] border border-[var(--fb-border)] text-[var(--fb-text-primary)] placeholder-[var(--fb-text-secondary)] focus:outline-none focus:border-[var(--fb-accent-dark)]"
-            />
-          </form>
-
-          {/* Pinned "Explain GID" Fast Jury Lookup */}
-          <form onSubmit={handleExplainSubmit} className="relative flex items-center">
-            <HelpCircle className="w-3.5 h-3.5 absolute left-2.5 text-[var(--fb-accent-dark)] pointer-events-none" />
-            <input
-              type="text"
-              placeholder="Explain GID..."
-              value={explainGidInput}
-              onChange={(e) => setExplainGidInput(e.target.value)}
-              className="w-28 lg:w-36 pl-8 pr-14 py-1 text-xs rounded-md bg-[var(--fb-bg)] border border-[var(--fb-border)] focus:border-[var(--fb-accent)] text-[var(--fb-text-primary)] placeholder-[var(--fb-text-secondary)] focus:outline-none font-mono"
-            />
+        {/* 5. Primary Actions */}
+        <div className="flex items-center gap-2 shrink-0 relative">
+          {/* Explain GID Popover Toggle Button */}
+          <div className="relative">
             <button
-              type="submit"
-              className="absolute right-1 px-1.5 py-0.5 text-[10px] font-bold rounded bg-[var(--fb-accent)] text-black hover:bg-[var(--fb-accent-dark)] transition cursor-pointer"
+              onClick={() => setIsExplainPopoverOpen(!isExplainPopoverOpen)}
+              className={`p-1.5 rounded-md border text-xs font-medium transition flex items-center gap-1 cursor-pointer ${
+                isExplainPopoverOpen
+                  ? "bg-[var(--fb-accent)] text-black border-[var(--fb-accent)]"
+                  : "bg-[var(--fb-surface)] border-[var(--fb-border)] text-[var(--fb-text-secondary)] hover:text-[var(--fb-text-primary)]"
+              }`}
+              title="Explain GID Rule Trace"
             >
-              Explain
+              <HelpCircle className="w-3.5 h-3.5 text-[var(--fb-accent-dark)]" />
+              <span className="hidden xl:inline text-xs font-semibold">Explain GID</span>
             </button>
-          </form>
+
+            {/* Explain GID Lightweight Popover */}
+            {isExplainPopoverOpen && (
+              <div className="absolute right-0 top-full mt-2 w-72 sm:w-80 p-3 rounded-xl bg-[var(--fb-surface)] border border-[var(--fb-border)] shadow-xl z-50 animate-in fade-in zoom-in-95 duration-150">
+                <div className="flex items-center justify-between pb-2 mb-2 border-b border-[var(--fb-border)]">
+                  <span className="text-xs font-bold flex items-center gap-1.5">
+                    <HelpCircle className="w-3.5 h-3.5 text-[var(--fb-accent-dark)]" />
+                    Explain Account GID
+                  </span>
+                  <button
+                    onClick={() => setIsExplainPopoverOpen(false)}
+                    className="p-1 text-[var(--fb-text-secondary)] hover:text-[var(--fb-text-primary)] rounded cursor-pointer"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+                <form
+                  onSubmit={(e) => {
+                    handleExplainSubmit(e);
+                    setIsExplainPopoverOpen(false);
+                  }}
+                  className="space-y-2.5"
+                >
+                  <div className="min-w-[220px] overflow-hidden">
+                    <input
+                      type="text"
+                      placeholder="Enter 18-digit GID..."
+                      value={explainGidInput}
+                      onChange={(e) => setExplainGidInput(e.target.value)}
+                      className="w-full px-2.5 py-1.5 text-xs rounded-lg bg-[var(--fb-bg)] border border-[var(--fb-border)] focus:border-[var(--fb-accent)] text-[var(--fb-text-primary)] placeholder-[var(--fb-text-secondary)] focus:outline-none font-mono truncate"
+                      autoFocus
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    className="w-full py-1.5 px-3 rounded-lg bg-[var(--fb-accent)] hover:bg-[var(--fb-accent-dark)] text-black font-semibold text-xs transition cursor-pointer shadow-xs"
+                  >
+                    Inspect AML Rule Trace
+                  </button>
+                </form>
+              </div>
+            )}
+          </div>
 
           {/* Recompute Button */}
           <button
@@ -334,7 +380,7 @@ export default function AnalystWorkspace() {
           {/* Network Overview Drawer Toggle */}
           <button
             onClick={() => setIsOverviewOpen(!isOverviewOpen)}
-            className={`p-1.5 rounded-md border text-xs font-medium transition flex items-center gap-1 ${
+            className={`p-1.5 rounded-md border text-xs font-medium transition flex items-center gap-1 cursor-pointer ${
               isOverviewOpen
                 ? "bg-[var(--fb-accent)] text-black border-[var(--fb-accent)]"
                 : "bg-[var(--fb-surface)] border-[var(--fb-border)] text-[var(--fb-text-secondary)] hover:text-[var(--fb-text-primary)]"

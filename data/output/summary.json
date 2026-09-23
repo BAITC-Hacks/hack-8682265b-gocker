@@ -1,9 +1,11 @@
 {
   "status": "success",
-  "elapsed_seconds": 5.26,
+  "elapsed_seconds": 5.97,
   "nodes_count": 2248,
   "edges_count": 3119,
   "clusters_count": 82,
+  "top_priority_count": 5,
+  "high_priority_threshold": 0.5,
   "output_directory": "/home/artcevvv/Documents/Personal/Hackathons/hackalem/data/output",
   "resilience": {
     "initial_components": 35,

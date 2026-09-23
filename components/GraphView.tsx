@@ -11,6 +11,8 @@ import {
   Eye,
   AlertTriangle,
   X,
+  Compass,
+  Maximize2,
 } from "lucide-react";
 
 export interface GraphNode {
@@ -120,6 +122,7 @@ export default function GraphView({
   const [hoveredNode, setHoveredNode] = useState<GraphNode | null>(null);
   const [tooltipPos, setTooltipPos] = useState<{ x: number; y: number } | null>(null);
   const [showFullWarning, setShowFullWarning] = useState(false);
+  const [showAllConnections, setShowAllConnections] = useState(false);
   const [viewMode, setViewMode] = useState<"cluster_subgraph" | "key_actors" | "full">(
     activeClusterFilter !== null ? "cluster_subgraph" : "key_actors"
   );
@@ -158,7 +161,6 @@ export default function GraphView({
     if (nodes.length === 0) return [];
 
     if (activeClusterFilter !== null) {
-      // Cluster Subgraph: cluster members + bridge neighbor nodes
       const clusterGids = new Set<number>();
       for (const n of nodes) {
         if (n.cluster_id === activeClusterFilter) {
@@ -194,7 +196,7 @@ export default function GraphView({
       return nodes;
     }
 
-    // Key actors view: coordinators, consolidators, distributors, seeds, and high priority accounts
+    // Key actors view: coordinators, consolidators, distributors, seeds, and elevated priority
     return nodes.filter(
       (n) =>
         n.role === "coordinator" ||
@@ -209,22 +211,23 @@ export default function GraphView({
     return new Set(displayNodes.map((n) => n.gid));
   }, [displayNodes]);
 
-  // Position nodes
-  const positionedNodes = useMemo(() => {
-    if (displayNodes.length === 0) return [];
+  // Cluster-aware layout with minimum node spacing
+  const { positionedNodes, clusterCentroids } = useMemo(() => {
+    if (displayNodes.length === 0) {
+      return { positionedNodes: [], clusterCentroids: new Map<number, { x: number; y: number; count: number }>() };
+    }
+
+    const centroids = new Map<number, { x: number; y: number; count: number }>();
 
     if (activeClusterFilter !== null) {
-      // Focused layout: core cluster members in inner circle, bridge neighbors in outer orbit
       const core = displayNodes.filter((n) => !n.isBridge);
       const bridge = displayNodes.filter((n) => n.isBridge);
-
       const result: GraphNode[] = [];
       const coreN = core.length;
-      const coreRadius = Math.max(80, Math.min(260, 40 + Math.sqrt(coreN) * 32));
+      const coreRadius = Math.max(90, Math.min(280, 50 + Math.sqrt(coreN) * 36));
 
       core.forEach((node, i) => {
-        // High priority nodes sit closer to center
-        const r = coreRadius * (0.3 + (1 - node.priority_score) * 0.7);
+        const r = coreRadius * (0.35 + (1 - node.priority_score) * 0.65);
         const angle = (i / Math.max(1, coreN)) * 2 * Math.PI;
         result.push({
           ...node,
@@ -233,8 +236,10 @@ export default function GraphView({
         });
       });
 
+      centroids.set(activeClusterFilter, { x: 0, y: 0, count: coreN });
+
       const bridgeN = bridge.length;
-      const bridgeRadius = coreRadius + 140;
+      const bridgeRadius = coreRadius + 150;
       bridge.forEach((node, i) => {
         const angle = (i / Math.max(1, bridgeN)) * 2 * Math.PI;
         result.push({
@@ -244,10 +249,10 @@ export default function GraphView({
         });
       });
 
-      return result;
+      return { positionedNodes: result, clusterCentroids: centroids };
     }
 
-    // Grid-clustered layout for multi-cluster views
+    // Multi-cluster views: group by cluster_id, layout clusters cohesively
     const clusterMap = new Map<number, GraphNode[]>();
     for (const node of displayNodes) {
       const c = node.cluster_id;
@@ -255,18 +260,42 @@ export default function GraphView({
       clusterMap.get(c)!.push({ ...node });
     }
 
-    const clusters = Array.from(clusterMap.entries());
-    const nClusters = clusters.length;
-    const gridCols = Math.ceil(Math.sqrt(nClusters * 1.4)) || 1;
-    const clusterSpacing = viewMode === "key_actors" ? 440 : 560;
+    // Sort clusters by size descending (largest clusters in central rings)
+    const sortedClusters = Array.from(clusterMap.entries()).sort(
+      (a, b) => b[1].length - a[1].length
+    );
 
     const result: GraphNode[] = [];
+    const nClusters = sortedClusters.length;
 
-    clusters.forEach(([_, cNodes], cIdx) => {
-      const col = cIdx % gridCols;
-      const row = Math.floor(cIdx / gridCols);
-      const cx = (col - gridCols / 2) * clusterSpacing;
-      const cy = (row - Math.ceil(nClusters / gridCols) / 2) * clusterSpacing;
+    // Arrange cluster centers in tight concentric rings
+    let clusterIdx = 0;
+    let ring = 0;
+    let ringRadius = 0;
+    let clustersInCurrentRing = 1;
+    let ringClusterCount = 0;
+
+    const ringStep = viewMode === "key_actors" ? 340 : 420;
+
+    sortedClusters.forEach(([cId, cNodes]) => {
+      let cx = 0;
+      let cy = 0;
+
+      if (clusterIdx > 0) {
+        if (ringClusterCount >= clustersInCurrentRing) {
+          ring += 1;
+          ringRadius = ring * ringStep;
+          clustersInCurrentRing = Math.max(6, Math.round(ring * 5.5));
+          ringClusterCount = 0;
+        }
+        const angle = (ringClusterCount / clustersInCurrentRing) * 2 * Math.PI + (ring % 2 === 1 ? 0.3 : 0);
+        cx = ringRadius * Math.cos(angle);
+        cy = ringRadius * Math.sin(angle);
+        ringClusterCount += 1;
+      }
+
+      clusterIdx += 1;
+      centroids.set(cId, { x: cx, y: cy, count: cNodes.length });
 
       const n = cNodes.length;
       if (n === 1) {
@@ -274,9 +303,10 @@ export default function GraphView({
         cNodes[0].y = cy;
         result.push(cNodes[0]);
       } else {
-        const radius = Math.min(220, 32 + Math.sqrt(n) * 26);
+        // Enforce minimum node distance in cluster circle >= 45px
+        const radius = Math.max(48, Math.min(220, 28 + Math.sqrt(n) * 32));
         cNodes.forEach((node, i) => {
-          const r = radius * (1 - Math.min(0.65, node.priority_score * 0.7));
+          const r = radius * (1 - Math.min(0.55, node.priority_score * 0.6));
           const angle = (i / n) * 2 * Math.PI;
           node.x = cx + r * Math.cos(angle);
           node.y = cy + r * Math.sin(angle);
@@ -285,7 +315,7 @@ export default function GraphView({
       }
     });
 
-    return result;
+    return { positionedNodes: result, clusterCentroids: centroids };
   }, [displayNodes, activeClusterFilter, viewMode]);
 
   const nodeMap = useMemo(() => {
@@ -296,18 +326,55 @@ export default function GraphView({
     return map;
   }, [positionedNodes]);
 
-  // Edges connecting visible nodes
+  // Top 10 nodes by priority score for selective label rendering
+  const top10Gids = useMemo(() => {
+    const sorted = [...positionedNodes].sort((a, b) => b.priority_score - a.priority_score);
+    return new Set(sorted.slice(0, 10).map((n) => n.gid));
+  }, [positionedNodes]);
+
+  // Filtered & Directed Edges
   const visibleEdges = useMemo(() => {
-    const res: GraphEdge[] = [];
+    const rawEdges: GraphEdge[] = [];
     for (const e of edges) {
       const u = Number(e.source);
       const v = Number(e.target);
       if (displayGidSet.has(u) && displayGidSet.has(v)) {
-        res.push(e);
+        rawEdges.push(e);
       }
     }
-    return res;
-  }, [edges, displayGidSet]);
+
+    // If density > 50 nodes and not opted in, show top 60% turnover edges + focal connections
+    if (displayNodes.length > 50 && !showAllConnections && rawEdges.length > 10) {
+      const sortedByVolume = [...rawEdges].sort((a, b) => (b.sum_kzt || 0) - (a.sum_kzt || 0));
+      const cutoffIdx = Math.max(1, Math.ceil(sortedByVolume.length * 0.6));
+      const cutoffVol = sortedByVolume[cutoffIdx - 1]?.sum_kzt || 0;
+
+      const focalGid = selectedGid !== null ? selectedGid : hoveredNode ? hoveredNode.gid : null;
+
+      return rawEdges.filter((e) => {
+        const u = Number(e.source);
+        const v = Number(e.target);
+        if (focalGid !== null && (u === focalGid || v === focalGid)) return true;
+        return (e.sum_kzt || 0) >= cutoffVol;
+      });
+    }
+
+    return rawEdges;
+  }, [edges, displayGidSet, displayNodes.length, showAllConnections, selectedGid, hoveredNode]);
+
+  // Set of bidirectional pairs to curve in opposite directions
+  const bidirectionalSet = useMemo(() => {
+    const edgeKeys = new Set<string>();
+    const bidi = new Set<string>();
+    for (const e of visibleEdges) {
+      edgeKeys.add(`${e.source}->${e.target}`);
+      if (edgeKeys.has(`${e.target}->${e.source}`)) {
+        bidi.add(`${e.source}->${e.target}`);
+        bidi.add(`${e.target}->${e.source}`);
+      }
+    }
+    return bidi;
+  }, [visibleEdges]);
 
   // Active neighborhood for focus + context
   const activeNeighborhood = useMemo(() => {
@@ -327,7 +394,45 @@ export default function GraphView({
     return set;
   }, [selectedGid, hoveredNode, highlightedGids, adjacency]);
 
-  // Center on selected node or initial center
+  // Fit camera to bounds
+  const fitToBounds = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas || positionedNodes.length === 0) return;
+
+    let minX = Infinity;
+    let maxX = -Infinity;
+    let minY = Infinity;
+    let maxY = -Infinity;
+
+    for (const n of positionedNodes) {
+      if (n.x === undefined || n.y === undefined) continue;
+      if (n.x < minX) minX = n.x;
+      if (n.x > maxX) maxX = n.x;
+      if (n.y < minY) minY = n.y;
+      if (n.y > maxY) maxY = n.y;
+    }
+
+    if (!isFinite(minX) || !isFinite(maxX)) return;
+
+    const width = canvas.clientWidth || 800;
+    const height = canvas.clientHeight || 600;
+    const padding = 70;
+
+    const spanX = Math.max(120, maxX - minX + padding * 2);
+    const spanY = Math.max(120, maxY - minY + padding * 2);
+
+    const scale = Math.min(2.0, Math.max(0.2, Math.min((width - padding) / spanX, (height - padding) / spanY)));
+    const centerX = (minX + maxX) / 2;
+    const centerY = (minY + maxY) / 2;
+
+    setTransform({
+      x: width / 2 - centerX * scale,
+      y: height / 2 - centerY * scale,
+      k: scale,
+    });
+  }, [positionedNodes]);
+
+  // Auto fit on layout changes or center on selected node
   useEffect(() => {
     if (selectedGid !== null) {
       const target = nodeMap.get(selectedGid);
@@ -337,21 +442,16 @@ export default function GraphView({
         const width = canvas.clientWidth;
         const height = canvas.clientHeight;
         setTransform({
-          x: width / 2 - target.x * 1.2,
-          y: height / 2 - target.y * 1.2,
-          k: 1.2,
+          x: width / 2 - target.x * 1.25,
+          y: height / 2 - target.y * 1.25,
+          k: 1.25,
         });
         return;
       }
     }
 
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const width = canvas.clientWidth;
-    const height = canvas.clientHeight;
-    const initialK = activeClusterFilter !== null ? 1.0 : viewMode === "key_actors" ? 0.75 : 0.38;
-    setTransform({ x: width / 2, y: height / 2, k: initialK });
-  }, [selectedGid, activeClusterFilter, viewMode]);
+    fitToBounds();
+  }, [selectedGid, activeClusterFilter, viewMode, fitToBounds, nodeMap]);
 
   // Canvas Render
   const render = useCallback(() => {
@@ -379,7 +479,29 @@ export default function GraphView({
     const hasHighlight = activeNeighborhood.size > 0;
     const focalGid = selectedGid !== null ? selectedGid : hoveredNode ? hoveredNode.gid : null;
 
-    // 1. Draw Edges with Directional Arrows
+    // Draw Subtle Cluster Grouping Rings & Labels in Multi-Cluster View
+    if (activeClusterFilter === null && clusterCentroids.size > 1 && transform.k > 0.3) {
+      ctx.save();
+      for (const [cId, centroid] of clusterCentroids.entries()) {
+        if (centroid.count > 1) {
+          ctx.beginPath();
+          const r = Math.max(50, Math.min(230, 30 + Math.sqrt(centroid.count) * 34));
+          ctx.arc(centroid.x, centroid.y, r, 0, 2 * Math.PI);
+          ctx.strokeStyle = "rgba(148, 163, 184, 0.14)";
+          ctx.lineWidth = 1.2 / transform.k;
+          ctx.setLineDash([4 / transform.k, 4 / transform.k]);
+          ctx.stroke();
+          ctx.setLineDash([]);
+
+          ctx.font = `600 ${Math.max(9, 10 / transform.k)}px -apple-system, BlinkMacSystemFont, sans-serif`;
+          ctx.fillStyle = "rgba(148, 163, 184, 0.55)";
+          ctx.fillText(`Cluster #${cId}`, centroid.x - 24 / transform.k, centroid.y - r - 4 / transform.k);
+        }
+      }
+      ctx.restore();
+    }
+
+    // 1. Draw Curved Edges with Visible Directional Arrows
     for (const edge of visibleEdges) {
       const uId = Number(edge.source);
       const vId = Number(edge.target);
@@ -396,16 +518,32 @@ export default function GraphView({
 
       const isConnectedToFocal = focalGid !== null && (u.gid === focalGid || v.gid === focalGid);
       const isNeighborEdge = hasHighlight && activeNeighborhood.has(u.gid) && activeNeighborhood.has(v.gid);
-      
+      const isBidi = bidirectionalSet.has(`${edge.source}->${edge.target}`);
+
+      // Quadratic Curve Control Point: calculate offset normal to the chord
+      const dx = v.x - u.x;
+      const dy = v.y - u.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist < 1) continue;
+
+      const nx = -dy / dist;
+      const ny = dx / dist;
+      const midX = (u.x + v.x) / 2;
+      const midY = (u.y + v.y) / 2;
+
+      // Curve offset: bidirectional flows curve strongly away, others have subtle organic curvature
+      const curvature = isBidi ? 0.22 : 0.08;
+      const cpX = midX + nx * (dist * curvature);
+      const cpY = midY + ny * (dist * curvature);
+
       // Logarithmic thickness: min 1px, max 5.5px
       const logVol = Math.max(1.0, Math.min(5.5, (Math.log10(Math.max(100, edge.sum_kzt)) - 3) * 0.9 + 1.2));
 
       ctx.beginPath();
       ctx.moveTo(u.x, u.y);
-      ctx.lineTo(v.x, v.y);
+      ctx.quadraticCurveTo(cpX, cpY, v.x, v.y);
 
       if (isConnectedToFocal) {
-        // High contrast for direct flows: green for outgoing from focal, blue for incoming to focal
         ctx.strokeStyle = u.gid === focalGid ? "#00A855" : "#2E8FE0";
         ctx.lineWidth = Math.max(2.0, logVol * 1.4) / transform.k;
         ctx.globalAlpha = 0.95;
@@ -414,12 +552,10 @@ export default function GraphView({
         ctx.lineWidth = Math.max(1.2, logVol) / transform.k;
         ctx.globalAlpha = 0.65;
       } else if (hasHighlight) {
-        // Dimmed non-neighbor edges to opacity 0.12 - 0.15
         ctx.strokeStyle = "#94A3B8";
         ctx.lineWidth = 0.8 / transform.k;
         ctx.globalAlpha = 0.12;
       } else {
-        // Default neutral semi-transparent edge
         ctx.strokeStyle = "#64748B";
         ctx.lineWidth = Math.max(0.9, logVol * 0.75) / transform.k;
         ctx.globalAlpha = 0.38;
@@ -427,38 +563,36 @@ export default function GraphView({
 
       ctx.stroke();
 
-      // Render directional arrow (u -> v)
-      const dx = v.x - u.x;
-      const dy = v.y - u.y;
-      const dist = Math.sqrt(dx * dx + dy * dy);
+      // Render Directional Arrowhead pointing at target v
+      const vRadius = (4 + 12 * Math.max(0, Math.min(1, v.priority_score))) / transform.k;
 
-      // Only draw arrow if distance is sufficient
-      if (dist > 18) {
-        const uRadius = (4 + 12 * u.priority_score) / transform.k;
-        const vRadius = (4 + 12 * v.priority_score) / transform.k;
-        
-        // Place arrow slightly before target node boundary
-        const targetOffset = vRadius + 4 / transform.k;
-        const arrowDist = Math.max(dist * 0.45, dist - targetOffset);
-        const ax = u.x + (dx / dist) * arrowDist;
-        const ay = u.y + (dy / dist) * arrowDist;
-        const angle = Math.atan2(dy, dx);
-        const arrowSize = (isConnectedToFocal ? 7 : 5) / transform.k;
+      // Tangent vector at target from control point (cpX, cpY) to v
+      const tax = v.x - cpX;
+      const tay = v.y - cpY;
+      const tLen = Math.sqrt(tax * tax + tay * tay) || 1;
+      const angle = Math.atan2(tay, tax);
 
-        ctx.beginPath();
-        ctx.moveTo(ax, ay);
-        ctx.lineTo(
-          ax - arrowSize * Math.cos(angle - Math.PI / 6),
-          ay - arrowSize * Math.sin(angle - Math.PI / 6)
-        );
-        ctx.lineTo(
-          ax - arrowSize * Math.cos(angle + Math.PI / 6),
-          ay - arrowSize * Math.sin(angle + Math.PI / 6)
-        );
-        ctx.closePath();
-        ctx.fillStyle = ctx.strokeStyle;
-        ctx.fill();
-      }
+      // Position arrowhead just outside target node boundary
+      const targetOffset = vRadius + 3 / transform.k;
+      const ax = v.x - (tax / tLen) * targetOffset;
+      const ay = v.y - (tay / tLen) * targetOffset;
+
+      // Minimum visible size regardless of zoom
+      const arrowSize = Math.max(5.5 / transform.k, Math.min(13 / transform.k, (isConnectedToFocal ? 9 : 7) / transform.k));
+
+      ctx.beginPath();
+      ctx.moveTo(ax, ay);
+      ctx.lineTo(
+        ax - arrowSize * Math.cos(angle - Math.PI / 6),
+        ay - arrowSize * Math.sin(angle - Math.PI / 6)
+      );
+      ctx.lineTo(
+        ax - arrowSize * Math.cos(angle + Math.PI / 6),
+        ay - arrowSize * Math.sin(angle + Math.PI / 6)
+      );
+      ctx.closePath();
+      ctx.fillStyle = ctx.strokeStyle;
+      ctx.fill();
     }
 
     // 2. Draw Nodes
@@ -469,7 +603,6 @@ export default function GraphView({
       const isNeighbor = activeNeighborhood.has(node.gid);
       const isFiltered = activeRoleFilter !== null && node.role !== activeRoleFilter;
 
-      // Radius derived from priority_score (min 4px, max 16px)
       let radius = 4 + 12 * Math.max(0, Math.min(1, node.priority_score));
       if (node.role === "peripheral") {
         radius = 4;
@@ -488,7 +621,6 @@ export default function GraphView({
       }
 
       if (isFocal) {
-        // Selected / Hovered focal node: solid high-contrast fill with clean border ring
         ctx.fillStyle = "#FFFFFF";
         ctx.globalAlpha = 1.0;
         ctx.fill();
@@ -503,7 +635,6 @@ export default function GraphView({
         ctx.lineWidth = 1.5 / transform.k;
         ctx.stroke();
       } else if (isNeighbor) {
-        // 1-hop connections stay at full brightness
         ctx.fillStyle = color.bg;
         ctx.globalAlpha = 0.95;
         ctx.fill();
@@ -512,19 +643,15 @@ export default function GraphView({
         ctx.strokeStyle = color.border;
         ctx.stroke();
       } else if (hasHighlight) {
-        // Dim all non-connected nodes to opacity: 0.12-0.18
         ctx.fillStyle = color.bg;
         ctx.globalAlpha = 0.14;
         ctx.fill();
       } else {
-        // Default mode
         if (node.role === "peripheral") {
-          // Peripheral nodes small, light gray, opacity: 0.4
           ctx.fillStyle = "#B8BCC2";
           ctx.globalAlpha = 0.4;
           ctx.fill();
         } else {
-          // Fill saturation/brightness based on role_score
           const alpha = 0.5 + Math.min(0.5, node.role_score * 0.5);
           ctx.fillStyle = color.bg;
           ctx.globalAlpha = alpha;
@@ -538,16 +665,15 @@ export default function GraphView({
         }
       }
 
-      // 3. Node Labels
-      // Focus + context: direct connections (1-hop) labeled with neighbor GIDs
+      // 3. Selective Label Rendering (Focal, 1-Hop Neighbors, or Top 10 in Viewport)
       const shouldLabel =
         isFocal ||
         isNeighbor ||
-        (node.priority_score >= 0.5 && transform.k > 0.8) ||
+        top10Gids.has(node.gid) ||
         (node.isBridge && activeClusterFilter !== null);
 
       if (shouldLabel) {
-        ctx.globalAlpha = isFocal || isNeighbor ? 1.0 : 0.75;
+        ctx.globalAlpha = isFocal || isNeighbor ? 1.0 : 0.8;
         ctx.font = `600 ${Math.max(10, 11 / transform.k)}px -apple-system, BlinkMacSystemFont, sans-serif`;
         ctx.fillStyle = isFocal ? "#00D26A" : "#1E293B";
         const label = String(node.gid).slice(-6);
@@ -566,6 +692,9 @@ export default function GraphView({
     activeNeighborhood,
     activeRoleFilter,
     activeClusterFilter,
+    bidirectionalSet,
+    top10Gids,
+    clusterCentroids,
   ]);
 
   useEffect(() => {
@@ -675,7 +804,7 @@ export default function GraphView({
               </strong>
               <button
                 onClick={onClearClusterFilter}
-                className="ml-2 p-1 rounded-md hover:bg-[var(--fb-border)] text-[var(--fb-text-secondary)] hover:text-[var(--fb-text-primary)]"
+                className="ml-2 p-1 rounded-md hover:bg-[var(--fb-border)] text-[var(--fb-text-secondary)] hover:text-[var(--fb-text-primary)] cursor-pointer"
                 title="Exit Cluster Subgraph"
               >
                 <X className="w-3.5 h-3.5" />
@@ -685,32 +814,50 @@ export default function GraphView({
             <div className="flex items-center p-1 rounded-xl fb-card bg-[var(--fb-surface)] border border-[var(--fb-border)] shadow-sm text-xs">
               <button
                 onClick={() => setViewMode("key_actors")}
-                className={`px-3 py-1.5 font-semibold rounded-lg transition flex items-center gap-1.5 ${
+                className={`px-3 py-1.5 font-semibold rounded-lg transition flex items-center gap-1.5 cursor-pointer ${
                   viewMode === "key_actors"
                     ? "bg-[var(--fb-accent)] text-black shadow-xs"
                     : "text-[var(--fb-text-secondary)] hover:text-[var(--fb-text-primary)]"
                 }`}
               >
                 <Sparkles className="w-3.5 h-3.5" />
-                Key Actors ({nodes.filter((n) => n.role === "coordinator" || n.role === "consolidator" || n.role === "distributor" || n.is_seed).length})
+                Key Actors ({nodes.filter((n) => n.role === "coordinator" || n.role === "consolidator" || n.role === "distributor" || n.is_seed || n.priority_score >= 0.25).length})
               </button>
               <button
                 onClick={() => setShowFullWarning(true)}
-                className={`px-3 py-1.5 font-semibold rounded-lg transition flex items-center gap-1.5 ${
+                className={`px-3 py-1.5 font-semibold rounded-lg transition flex items-center gap-1.5 cursor-pointer ${
                   viewMode === "full"
                     ? "bg-[var(--fb-accent)] text-black shadow-xs"
                     : "text-[var(--fb-text-secondary)] hover:text-[var(--fb-text-primary)]"
                 }`}
               >
                 <Layers className="w-3.5 h-3.5" />
-                Show Entire Network ({nodes.length})
+                Entire Network ({nodes.length})
               </button>
             </div>
           )}
 
+          {/* Density / Turnover Edge Filter Toggle (when > 50 nodes) */}
+          {displayNodes.length > 50 && (
+            <button
+              onClick={() => setShowAllConnections(!showAllConnections)}
+              className={`pointer-events-auto px-2.5 py-1.5 text-xs font-semibold rounded-xl border transition flex items-center gap-1.5 shadow-xs cursor-pointer ${
+                showAllConnections
+                  ? "bg-amber-500/15 border-amber-500 text-amber-700 dark:text-amber-300"
+                  : "bg-[var(--fb-surface)] border-[var(--fb-border)] text-[var(--fb-text-secondary)] hover:text-[var(--fb-text-primary)]"
+              }`}
+              title="Toggle between top 60% turnover flows and all connections"
+            >
+              <Compass className="w-3.5 h-3.5" />
+              <span>
+                {showAllConnections ? "All Connections (dense)" : "Top 60% Volume Flows"}
+              </span>
+            </button>
+          )}
+
           <button
             onClick={onOpenClusterExplorer}
-            className="pointer-events-auto px-3 py-1.5 text-xs font-semibold rounded-xl fb-card bg-[var(--fb-surface)] border border-[var(--fb-border)] text-[var(--fb-text-primary)] hover:border-[var(--fb-accent)] transition flex items-center gap-1.5 shadow-sm"
+            className="pointer-events-auto px-3 py-1.5 text-xs font-semibold rounded-xl fb-card bg-[var(--fb-surface)] border border-[var(--fb-border)] text-[var(--fb-text-primary)] hover:border-[var(--fb-accent)] transition flex items-center gap-1.5 shadow-sm cursor-pointer"
           >
             <Layers className="w-3.5 h-3.5 text-[var(--fb-accent-dark)]" />
             Explore by Cluster Map
@@ -718,10 +865,10 @@ export default function GraphView({
         </div>
 
         {/* Role Quick Filters */}
-        <div className="pointer-events-auto hidden lg:flex items-center gap-1.5 p-1 rounded-xl fb-card bg-[var(--fb-surface)] border border-[var(--fb-border)] shadow-sm text-xs">
+        <div className="pointer-events-auto hidden xl:flex items-center gap-1.5 p-1 rounded-xl fb-card bg-[var(--fb-surface)] border border-[var(--fb-border)] shadow-sm text-xs">
           <button
             onClick={() => onSetRoleFilter(null)}
-            className={`px-2.5 py-1 rounded-lg transition font-medium ${
+            className={`px-2.5 py-1 rounded-lg transition font-medium cursor-pointer ${
               activeRoleFilter === null
                 ? "bg-[var(--fb-border)] text-[var(--fb-text-primary)] font-semibold"
                 : "text-[var(--fb-text-secondary)] hover:text-[var(--fb-text-primary)]"
@@ -733,7 +880,7 @@ export default function GraphView({
             <button
               key={r}
               onClick={() => onSetRoleFilter(activeRoleFilter === r ? null : r)}
-              className={`px-2.5 py-1 rounded-lg transition font-medium flex items-center gap-1.5 ${
+              className={`px-2.5 py-1 rounded-lg transition font-medium flex items-center gap-1.5 cursor-pointer ${
                 activeRoleFilter === r
                   ? "bg-[var(--fb-border)] text-[var(--fb-text-primary)] font-semibold"
                   : "text-[var(--fb-text-secondary)] hover:text-[var(--fb-text-primary)]"
@@ -750,30 +897,28 @@ export default function GraphView({
       <div className="absolute top-4 right-4 flex flex-col gap-2 z-10">
         <button
           onClick={() => setTransform((prev) => ({ ...prev, k: Math.min(5.0, prev.k * 1.25) }))}
-          className="p-2 rounded-xl fb-card bg-[var(--fb-surface)] border border-[var(--fb-border)] text-[var(--fb-text-primary)] hover:bg-[var(--fb-border)] transition shadow-sm"
+          className="p-2 rounded-xl fb-card bg-[var(--fb-surface)] border border-[var(--fb-border)] text-[var(--fb-text-primary)] hover:bg-[var(--fb-border)] transition shadow-sm cursor-pointer"
           title="Zoom In"
         >
           <ZoomIn className="w-4 h-4" />
         </button>
         <button
           onClick={() => setTransform((prev) => ({ ...prev, k: Math.max(0.15, prev.k * 0.8) }))}
-          className="p-2 rounded-xl fb-card bg-[var(--fb-surface)] border border-[var(--fb-border)] text-[var(--fb-text-primary)] hover:bg-[var(--fb-border)] transition shadow-sm"
+          className="p-2 rounded-xl fb-card bg-[var(--fb-surface)] border border-[var(--fb-border)] text-[var(--fb-text-primary)] hover:bg-[var(--fb-border)] transition shadow-sm cursor-pointer"
           title="Zoom Out"
         >
           <ZoomOut className="w-4 h-4" />
         </button>
         <button
-          onClick={() => {
-            const canvas = canvasRef.current;
-            if (canvas) {
-              setTransform({
-                x: canvas.clientWidth / 2,
-                y: canvas.clientHeight / 2,
-                k: activeClusterFilter !== null ? 1.0 : 0.75,
-              });
-            }
-          }}
-          className="p-2 rounded-xl fb-card bg-[var(--fb-surface)] border border-[var(--fb-border)] text-[var(--fb-text-primary)] hover:bg-[var(--fb-border)] transition shadow-sm"
+          onClick={fitToBounds}
+          className="p-2 rounded-xl fb-card bg-[var(--fb-surface)] border border-[var(--fb-border)] text-[var(--fb-text-primary)] hover:bg-[var(--fb-border)] transition shadow-sm cursor-pointer"
+          title="Fit Network to View"
+        >
+          <Maximize2 className="w-4 h-4" />
+        </button>
+        <button
+          onClick={fitToBounds}
+          className="p-2 rounded-xl fb-card bg-[var(--fb-surface)] border border-[var(--fb-border)] text-[var(--fb-text-primary)] hover:bg-[var(--fb-border)] transition shadow-sm cursor-pointer"
           title="Reset View"
         >
           <RotateCcw className="w-4 h-4" />
@@ -796,7 +941,7 @@ export default function GraphView({
             <div className="flex items-center justify-end gap-2 pt-2">
               <button
                 onClick={() => setShowFullWarning(false)}
-                className="px-3.5 py-1.5 text-xs font-semibold rounded-lg hover:bg-[var(--fb-border)] text-[var(--fb-text-secondary)]"
+                className="px-3.5 py-1.5 text-xs font-semibold rounded-lg hover:bg-[var(--fb-border)] text-[var(--fb-text-secondary)] cursor-pointer"
               >
                 Cancel
               </button>
@@ -805,7 +950,7 @@ export default function GraphView({
                   setViewMode("full");
                   setShowFullWarning(false);
                 }}
-                className="px-4 py-1.5 text-xs font-semibold rounded-lg bg-[var(--fb-accent)] text-black hover:bg-[var(--fb-accent-dark)] transition"
+                className="px-4 py-1.5 text-xs font-semibold rounded-lg bg-[var(--fb-accent)] text-black hover:bg-[var(--fb-accent-dark)] transition cursor-pointer"
               >
                 Render Network Anyway
               </button>

@@ -58,12 +58,16 @@ def run_pipeline(data_dir: Path, out_dir: Path, enable_llm: bool = False) -> dic
 
     elapsed = time.time() - start_time
 
+    top_priority_count = int((df_prioritized["priority_score"] >= 0.5).sum()) if "priority_score" in df_prioritized.columns else 0
+
     summary = {
         "status": "success",
         "elapsed_seconds": round(elapsed, 2),
         "nodes_count": len(df_prioritized),
         "edges_count": len(edges),
         "clusters_count": int(df_prioritized["cluster_id"].nunique()),
+        "top_priority_count": top_priority_count,
+        "high_priority_threshold": 0.5,
         "output_directory": str(out_dir),
         "resilience": resilience_report,
         "cycle_nodes_count": int(df_prioritized["in_cycle"].sum()) if "in_cycle" in df_prioritized.columns else 0,
