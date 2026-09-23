@@ -98,3 +98,20 @@ def export_pipeline_csvs(
     if resilience_report:
         with open(out_dir / "resilience.json", "w") as f:
             json.dump(resilience_report, f, indent=2)
+
+    # 5. Export nodes_role_trace.json
+    if "rule_trace" in df.columns:
+        trace_map = {}
+        for r in df.itertuples():
+            gid_val = int(r.gid)
+            raw_trace = getattr(r, "rule_trace", [])
+            trace_list = raw_trace if isinstance(raw_trace, list) else json.loads(str(raw_trace))
+            trace_map[str(gid_val)] = {
+                "gid": gid_val,
+                "final_role": str(r.role),
+                "rule_trace": trace_list,
+                "role_score": float(r.role_score),
+                "priority_score": float(r.priority_score),
+            }
+        with open(out_dir / "nodes_role_trace.json", "w") as f:
+            json.dump(trace_map, f, indent=2)

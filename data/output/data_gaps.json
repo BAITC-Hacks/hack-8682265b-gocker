@@ -1,0 +1,26 @@
+[
+  {
+    "category": "Seed Account Lineage",
+    "finding": "31 seed accounts lack outward flow lineage (19 absent entirely from transaction graph, 12 appear only as inward recipients).",
+    "affected_count": 31,
+    "recommended_request": "Request full historical statement and interbank payment logs for these 31 target seed accounts (e.g. prior 6-12 months) to capture origin of funds prior to this extract window."
+  },
+  {
+    "category": "Graph Traversal Boundary",
+    "finding": "444 accounts sit at depth=4 with 0 outgoing transactions due to extraction depth limit, artificially masking downstream sinks.",
+    "affected_count": 444,
+    "recommended_request": "Extend graph traversal depth by 1-2 additional hops for these 444 hop-4 accounts to confirm whether funds terminate or disperse into secondary mules."
+  },
+  {
+    "category": "Peripheral Component Isolation",
+    "finding": "2058 accounts reside outside the central weakly-connected core, forming disjointed cluster fragments with seed links.",
+    "affected_count": 2058,
+    "recommended_request": "Query cross-institution payment rails (NSPK / national clearing) to investigate if isolated sub-networks connect to seed clients through external banking entities."
+  },
+  {
+    "category": "Sub-Threshold Cutoff Masking",
+    "finding": "170 accounts exhibit micro-structuring activity clustered directly above the 5,000 KZT extraction floor.",
+    "affected_count": 170,
+    "recommended_request": "Request the unmasked sub-5,000 KZT transaction log from core banking to identify micro-smurfing batches split intentionally below reporting thresholds."
+  }
+]

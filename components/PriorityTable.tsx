@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Search,
   ArrowUpDown,
@@ -14,14 +14,29 @@ import {
   ArrowUpRight,
   Network,
   Download,
+  FileDown,
+  AlertTriangle,
+  CheckCircle2,
+  XCircle,
+  HelpCircle,
+  FileText,
 } from "lucide-react";
 import { GraphNode, ROLE_COLORS } from "./GraphView";
+
+export interface ReviewRecord {
+  gid: number;
+  status: "unreviewed" | "escalated" | "cleared";
+  note?: string;
+  reviewed_by?: string;
+  updated_at?: string;
+}
 
 interface PriorityTableProps {
   nodes: GraphNode[];
   onSelectNode: (gid: number) => void;
   onAskAboutNode: (gid: number) => void;
   onSwitchToGraph: () => void;
+  onExplainNode?: (gid: number) => void;
 }
 
 export default function PriorityTable({
@@ -29,13 +44,91 @@ export default function PriorityTable({
   onSelectNode,
   onAskAboutNode,
   onSwitchToGraph,
+  onExplainNode,
 }: PriorityTableProps) {
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState<string>("all");
   const [riskFilter, setRiskFilter] = useState<string>("all");
+  const [escalatedOnly, setEscalatedOnly] = useState(false);
+  const [reviews, setReviews] = useState<Record<number, ReviewRecord>>({});
+  const [exportingPdf, setExportingPdf] = useState(false);
   const [copiedGid, setCopiedGid] = useState<number | null>(null);
   const [page, setPage] = useState(1);
   const pageSize = 20;
+
+  useEffect(() => {
+    fetch("/api/reviews")
+      .then((res) => (res.ok ? res.json() : []))
+      .then((data: ReviewRecord[]) => {
+        const map: Record<number, ReviewRecord> = {};
+        for (const item of data) {
+          map[item.gid] = item;
+        }
+        setReviews(map);
+      })
+      .catch(() => {});
+  }, []);
+
+  const handleUpdateStatus = async (gid: number, newStatus: "escalated" | "cleared" | "unreviewed") => {
+    // Optimistic update
+    const previous = reviews[gid];
+    setReviews((prev) => ({
+      ...prev,
+      [gid]: {
+        gid,
+        status: newStatus,
+        note: prev[gid]?.note,
+        updated_at: new Date().toISOString(),
+      },
+    }));
+
+    try {
+      const res = await fetch(`/api/reviews/${gid}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      if (!res.ok) throw new Error("Status update failed");
+      const updated = await res.json();
+      setReviews((prev) => ({ ...prev, [gid]: updated }));
+    } catch {
+      // Revert if failed
+      if (previous) {
+        setReviews((prev) => ({ ...prev, [gid]: previous }));
+      } else {
+        setReviews((prev) => {
+          const next = { ...prev };
+          delete next[gid];
+          return next;
+        });
+      }
+    }
+  };
+
+  const handleExportPdf = async () => {
+    setExportingPdf(true);
+    try {
+      const res = await fetch("/api/reviews/export");
+      if (!res.ok) throw new Error("Failed to export PDF");
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "aml_escalated_request_list.pdf";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err: any) {
+      alert(`PDF Export error: ${err.message}`);
+    } finally {
+      setExportingPdf(false);
+    }
+  };
+
+  const escalatedCount = useMemo(() => {
+    return Object.values(reviews).filter((r) => r.status === "escalated").length;
+  }, [reviews]);
 
   const copyToClipboard = (gid: number) => {
     navigator.clipboard.writeText(String(gid));
@@ -60,10 +153,13 @@ export default function PriorityTable({
           matchesRisk = n.priority_score >= 0.25 && n.priority_score < 0.5;
         else if (riskFilter === "moderate") matchesRisk = n.priority_score < 0.25;
 
-        return matchesSearch && matchesRole && matchesRisk;
+        const isEscalated = reviews[n.gid]?.status === "escalated";
+        const matchesEscalated = !escalatedOnly || isEscalated;
+
+        return matchesSearch && matchesRole && matchesRisk && matchesEscalated;
       })
       .sort((a, b) => b.priority_score - a.priority_score);
-  }, [nodes, search, roleFilter, riskFilter]);
+  }, [nodes, search, roleFilter, riskFilter, escalatedOnly, reviews]);
 
   const totalPages = Math.ceil(filteredNodes.length / pageSize) || 1;
   const paginatedNodes = useMemo(() => {
@@ -179,7 +275,26 @@ export default function PriorityTable({
             <option value="moderate">Moderate / Low (Score &lt; 0.25)</option>
           </select>
 
-          {/* Export Referral Dossier Button */}
+          {/* Escalated Only Filter Chip */}
+          <button
+            onClick={() => {
+              setEscalatedOnly(!escalatedOnly);
+              setPage(1);
+            }}
+            className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition flex items-center gap-1.5 cursor-pointer ${
+              escalatedOnly
+                ? "bg-rose-500/15 border-rose-500 text-rose-600 dark:text-rose-400 font-bold"
+                : "bg-[var(--fb-surface)] border-[var(--fb-border)] text-[var(--fb-text-secondary)] hover:text-[var(--fb-text-primary)]"
+            }`}
+          >
+            <AlertTriangle className="w-3.5 h-3.5 text-rose-500" />
+            <span>Escalated only</span>
+            <span className="px-1.5 py-0.2 rounded-full bg-rose-500/20 text-rose-600 dark:text-rose-400 text-[10px] font-mono">
+              {escalatedCount}
+            </span>
+          </button>
+
+          {/* Export Referral Dossier Button (CSV) */}
           <button
             onClick={handleExportReferralList}
             className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-[var(--fb-border)] bg-[var(--fb-surface)] hover:bg-[var(--fb-border)] text-[var(--fb-text-primary)] transition flex items-center gap-1.5 cursor-pointer shadow-xs"
@@ -187,6 +302,19 @@ export default function PriorityTable({
           >
             <Download className="w-3.5 h-3.5 text-emerald-600" />
             <span>Export Referral List</span>
+          </button>
+
+          {/* Generate Request List PDF Export Button */}
+          <button
+            onClick={handleExportPdf}
+            disabled={exportingPdf}
+            className="px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-rose-600 hover:bg-rose-700 text-white transition flex items-center gap-1.5 shadow-xs cursor-pointer disabled:opacity-50"
+            title="Download PDF Request List for Law Enforcement with all escalated accounts"
+          >
+            <FileDown className="w-3.5 h-3.5" />
+            <span>
+              {exportingPdf ? "Generating PDF..." : `Generate request list (${escalatedCount} escalated)`}
+            </span>
           </button>
 
           {/* Open Network Button */}
@@ -207,6 +335,7 @@ export default function PriorityTable({
             <tr>
               <th className="py-3 px-4 font-semibold">Rank</th>
               <th className="py-3 px-4 font-semibold">Account GID</th>
+              <th className="py-3 px-4 font-semibold">Status</th>
               <th className="py-3 px-4 font-semibold">Role</th>
               <th className="py-3 px-4 font-semibold">Priority Score</th>
               <th className="py-3 px-4 font-semibold">Money In</th>
@@ -222,6 +351,8 @@ export default function PriorityTable({
               const color = ROLE_COLORS[n.role] || ROLE_COLORS.peripheral;
               const isCritical = n.priority_score >= 0.5;
               const isElevated = n.priority_score >= 0.25 && n.priority_score < 0.5;
+              const review = reviews[n.gid];
+              const reviewStatus = review?.status || "unreviewed";
 
               return (
                 <tr
@@ -275,6 +406,23 @@ export default function PriorityTable({
                         </span>
                       )}
                     </div>
+                  </td>
+                  <td className="py-3 px-4">
+                    {reviewStatus === "escalated" ? (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold rounded-full bg-rose-100 text-rose-800 border border-rose-300">
+                        <AlertTriangle className="w-2.5 h-2.5 text-rose-600" />
+                        Escalated
+                      </span>
+                    ) : reviewStatus === "cleared" ? (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">
+                        <CheckCircle2 className="w-2.5 h-2.5 text-emerald-600" />
+                        Cleared
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center px-2 py-0.5 text-[10px] font-medium rounded-full bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400">
+                        Unreviewed
+                      </span>
+                    )}
                   </td>
                   <td className="py-3 px-4">
                     <span
@@ -333,6 +481,41 @@ export default function PriorityTable({
                   </td>
                   <td className="py-3 px-4 text-right">
                     <div className="flex items-center justify-end gap-1.5">
+                      {reviewStatus !== "escalated" ? (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleUpdateStatus(n.gid, "escalated");
+                          }}
+                          className="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-300 transition cursor-pointer"
+                          title="Escalate account to law enforcement review"
+                        >
+                          Escalate
+                        </button>
+                      ) : (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleUpdateStatus(n.gid, "cleared");
+                          }}
+                          className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-300 transition cursor-pointer"
+                          title="Mark account cleared after review"
+                        >
+                          Clear
+                        </button>
+                      )}
+                      {onExplainNode && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onExplainNode(n.gid);
+                          }}
+                          className="px-2 py-0.5 rounded text-[10px] font-bold bg-[var(--fb-border)] hover:bg-[var(--fb-accent)] hover:text-black text-[var(--fb-text-primary)] transition cursor-pointer"
+                          title="Explain AML rule match"
+                        >
+                          Explain
+                        </button>
+                      )}
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
@@ -349,7 +532,7 @@ export default function PriorityTable({
                           onSelectNode(n.gid);
                           onSwitchToGraph();
                         }}
-                        className="px-2 py-1 rounded-md bg-[var(--fb-border)] hover:bg-[var(--fb-accent)] hover:text-black text-[var(--fb-text-primary)] text-[11px] font-semibold transition flex items-center gap-1"
+                        className="px-2 py-1 rounded-md bg-[var(--fb-border)] hover:bg-[var(--fb-accent)] hover:text-black text-[var(--fb-text-primary)] text-[11px] font-semibold transition flex items-center gap-1 cursor-pointer"
                       >
                         <Eye className="w-3 h-3" />
                         <span>View</span>
@@ -361,7 +544,7 @@ export default function PriorityTable({
             })}
             {paginatedNodes.length === 0 && (
               <tr>
-                <td colSpan={9} className="py-12 text-center text-[var(--fb-text-secondary)]">
+                <td colSpan={10} className="py-12 text-center text-[var(--fb-text-secondary)]">
                   No accounts found matching your filter criteria.
                 </td>
               </tr>

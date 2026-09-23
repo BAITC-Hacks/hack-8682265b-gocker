@@ -1,10 +1,10 @@
 {
   "status": "success",
-  "elapsed_seconds": 1.47,
+  "elapsed_seconds": 5.26,
   "nodes_count": 2248,
   "edges_count": 3119,
   "clusters_count": 82,
-  "output_directory": "/home/ami-ka/Projects/hackalem/hack-8682265b-gocker/data/output",
+  "output_directory": "/home/artcevvv/Documents/Personal/Hackathons/hackalem/data/output",
   "resilience": {
     "initial_components": 35,
     "initial_giant_component_nodes": 1877,
