@@ -385,33 +385,36 @@ export default function AnalystWorkspace() {
                 </div>
               </div>
 
-              {/* Network Resilience Simulation */}
+              {/* Targeted Disruption & Choke-Point Analysis */}
               <div className="space-y-2 pt-2 border-t border-[var(--fb-border)]">
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] text-[var(--fb-text-secondary)] uppercase font-bold">
-                    Resilience Simulation
+                    Targeted Interdiction Impact
                   </span>
-                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-rose-100 text-rose-800">
-                    Attack Test
+                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-blue-100 text-blue-800">
+                    Choke-Point Model
                   </span>
                 </div>
                 <div className="p-2.5 rounded-xl bg-[var(--fb-bg)] border border-[var(--fb-border)] space-y-2 text-[11px]">
+                  <p className="text-[10px] text-[var(--fb-text-secondary)] leading-tight">
+                    Simulates structural network degradation if law enforcement disables key bridge accounts:
+                  </p>
                   <div>
-                    <span className="text-[var(--fb-text-secondary)]">Baseline Giant:</span>{" "}
+                    <span className="text-[var(--fb-text-secondary)]">Connected Core:</span>{" "}
                     <strong className="text-[var(--fb-text-primary)] font-mono">1,877 nodes</strong> (35 components)
                   </div>
                   <div className="pt-1.5 border-t border-[var(--fb-border)]">
-                    <div className="text-[var(--fb-text-secondary)]">Remove Top 5 Coordinators:</div>
+                    <div className="text-[var(--fb-text-secondary)]">Blocking Top 5 Coordinators:</div>
                     <div className="flex justify-between font-semibold text-[var(--fb-text-primary)] mt-0.5">
-                      <span>Fragments into:</span>
-                      <span className="font-mono text-rose-600">129 components</span>
+                      <span>Shatters core into:</span>
+                      <span className="font-mono text-amber-700 dark:text-amber-400 font-bold">129 fragments</span>
                     </div>
                   </div>
                   <div className="pt-1.5 border-t border-[var(--fb-border)]">
-                    <div className="text-[var(--fb-text-secondary)]">Remove Top 10 Coordinators:</div>
+                    <div className="text-[var(--fb-text-secondary)]">Blocking Top 10 Coordinators:</div>
                     <div className="flex justify-between font-semibold text-[var(--fb-text-primary)] mt-0.5">
-                      <span>Fragments into:</span>
-                      <span className="font-mono text-rose-700">228 components</span>
+                      <span>Shatters core into:</span>
+                      <span className="font-mono text-rose-700 dark:text-rose-400 font-bold">228 fragments</span>
                     </div>
                   </div>
                 </div>

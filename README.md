@@ -115,10 +115,10 @@ flowchart LR
 
 ### Advanced Flow Analytics & Novelty
 
-1. **Network Resilience & Attack Simulation**:
-   - Baseline: Giant component consists of **1,877 nodes** across 35 weakly connected components.
-   - Removing the top 5 coordinator bridge accounts causes the network to fragment into **129 isolated components** (reducing giant component by 8.5%).
-   - Removing the top 10 coordinator accounts fractures the network into **228 components** (reducing giant component by 16.5%), proving these nodes are vital structural choke points for AML interdiction.
+1. **Targeted Interdiction & Choke-Point Analysis**:
+   - Baseline: Main connected core consists of **1,877 nodes** across 35 weakly connected components.
+   - Disabling the top 5 coordinator bridge accounts causes the network to fragment into **129 isolated components** (reducing core size by 8.5%).
+   - Disabling the top 10 coordinator accounts fractures the network into **228 components** (reducing core size by 16.5%), quantitatively proving these nodes are vital structural choke points for AML interdiction and law enforcement referral.
 
 2. **Cycle & Return Flow Detection**:
    - Identified **309 accounts** participating in circular transaction loops across 84 cyclic subgraphs (via strongly connected components), exposing layering topologies where funds circulate back towards seed operations.

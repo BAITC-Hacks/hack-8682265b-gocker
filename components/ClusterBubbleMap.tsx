@@ -309,8 +309,11 @@ export default function ClusterBubbleMap({
       {/* Tooltip on Hover */}
       {hoveredBubble && tooltipPos && (
         <div
-          className="absolute pointer-events-none p-3.5 rounded-xl fb-card bg-[var(--fb-surface)] border border-[var(--fb-border)] text-xs shadow-xl z-30 transform -translate-x-1/2 -translate-y-full mb-3 max-w-xs"
-          style={{ left: tooltipPos.x, top: tooltipPos.y }}
+          className="absolute pointer-events-none p-3.5 rounded-xl fb-card bg-[var(--fb-surface)] border border-[var(--fb-border)] text-xs shadow-xl z-30 transform -translate-x-1/2 -translate-y-full mb-3 w-80 max-w-[calc(100vw-2rem)] break-words"
+          style={{
+            left: Math.max(170, Math.min((canvasRef.current?.clientWidth || 800) - 170, tooltipPos.x)),
+            top: tooltipPos.y,
+          }}
         >
           <div className="flex items-center justify-between mb-1.5">
             <span className="font-bold text-[var(--fb-text-primary)] text-sm">
@@ -335,12 +338,12 @@ export default function ClusterBubbleMap({
                 {hoveredBubble.sum_kzt_internal.toLocaleString()} KZT
               </strong>
             </div>
-            <div className="text-[11px] pt-1 border-t border-[var(--fb-border)] text-[var(--fb-text-primary)] leading-tight">
-              {hoveredBubble.hypothesis}
+            <div className="text-[11px] pt-1.5 border-t border-[var(--fb-border)] text-[var(--fb-text-primary)] leading-relaxed break-words whitespace-normal">
+              {hoveredBubble.hypothesis.replace(/;/g, "; ")}
             </div>
           </div>
 
-          <div className="flex items-center gap-1 text-[11px] text-[var(--fb-accent-dark)] font-semibold">
+          <div className="flex items-center gap-1 text-[11px] text-[var(--fb-accent-dark)] font-semibold pt-1 border-t border-[var(--fb-border)]">
             <span>Click to explore subgraph</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </div>
