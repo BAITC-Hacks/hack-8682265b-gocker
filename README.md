@@ -24,6 +24,14 @@ docker compose exec backend python -m app.pipeline.run
 
 Or trigger recomputation directly from the web interface using the **"Recompute"** button.
 
+### Running Automated Tests
+
+Run the complete 21-test validation suite covering data schemas, 16 components, roles, and API endpoints:
+
+```bash
+backend/.venv/bin/python -m pytest backend/tests -v
+```
+
 ---
 
 ## Role Assignment Rules & Thresholds

@@ -13,8 +13,9 @@ def export_pipeline_csvs(
 ) -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    # 1. nodes_roles.csv (mandatory schema + optional enrichment attributes)
+    # 1. nodes_roles.csv (HackAlem brief: id, role, role_score, cluster_id, priority_score, evidence)
     nodes_roles = pd.DataFrame({
+        "id": df["gid"].astype(int),
         "gid": df["gid"].astype(int),
         "role": df["role"].astype(str),
         "role_score": df["role_score"].astype(float),
@@ -61,6 +62,7 @@ def export_pipeline_csvs(
 
         cluster_rows.append({
             "cluster_id": int(c_id),
+            "Cluster_id": int(c_id),
             "n_nodes": n_nodes,
             "n_seed": n_seed,
             "sum_kzt_internal": round(sum_internal, 2),
@@ -70,7 +72,7 @@ def export_pipeline_csvs(
 
     pd.DataFrame(cluster_rows).to_csv(out_dir / "clusters.csv", index=False)
 
-    # 3. top_nodes.csv
+    # 3. top_nodes.csv (HackAlem brief: rank, GID, role, evaluation_priority, reason)
     top_df = df.sort_values(by="priority_score", ascending=False).head(max(top_n, 25)).copy()
     top_rows = []
     for rank, (_, row) in enumerate(top_df.iterrows(), start=1):
@@ -80,9 +82,13 @@ def export_pipeline_csvs(
         )
         top_rows.append({
             "rank": rank,
+            "id": int(row["gid"]),
             "gid": int(row["gid"]),
+            "GID": int(row["gid"]),
             "role": str(row["role"]),
+            "evaluation_priority": float(row["priority_score"]),
             "priority_score": float(row["priority_score"]),
+            "reason": why,
             "why": why,
         })
 

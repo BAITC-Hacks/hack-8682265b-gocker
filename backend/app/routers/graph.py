@@ -55,13 +55,13 @@ def load_graph_data_from_disk() -> Dict[str, Any]:
     nodes: List[Dict[str, Any]] = []
     for r in df_nodes.itertuples(index=False):
         pass_through_val = None if pd.isna(r.pass_through) else float(r.pass_through)
+        gid_val = int(getattr(r, "gid", getattr(r, "id", 0)))
         turnaround_val = None
         if hasattr(r, "turnaround_hours") and not pd.isna(r.turnaround_hours):
             turnaround_val = round(float(r.turnaround_hours), 1)
-
         nodes.append({
-            "id": str(r.gid),
-            "gid": int(r.gid),
+            "id": str(gid_val),
+            "gid": gid_val,
             "role": str(r.role),
             "role_score": float(r.role_score),
             "cluster_id": int(r.cluster_id),
