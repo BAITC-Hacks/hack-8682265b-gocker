@@ -13,6 +13,7 @@ import {
   ChevronUp,
   Loader2,
   SlidersHorizontal,
+  UploadCloud,
 } from "lucide-react";
 import GraphView, { GraphNode, GraphEdge } from "@/components/GraphView";
 import PriorityTable from "@/components/PriorityTable";
@@ -20,6 +21,7 @@ import ClusterBubbleMap from "@/components/ClusterBubbleMap";
 import NodeCard from "@/components/NodeCard";
 import AssistantPanel from "@/components/AssistantPanel";
 import OnboardingModal from "@/components/OnboardingModal";
+import UploadModal from "@/components/UploadModal";
 
 type ActiveTab = "table" | "clusters" | "graph";
 
@@ -39,11 +41,23 @@ export default function AnalystWorkspace() {
   const [isAssistantOpen, setIsAssistantOpen] = useState(false);
   const [assistantPrompt, setAssistantPrompt] = useState<string | null>(null);
   const [isOverviewOpen, setIsOverviewOpen] = useState(false);
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [datasetStatus, setDatasetStatus] = useState<any>(null);
 
   const [loading, setLoading] = useState(true);
   const [recomputing, setRecomputing] = useState(false);
   const [searchGidInput, setSearchGidInput] = useState("");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  const fetchDatasetStatus = async () => {
+    try {
+      const res = await fetch("/api/dataset/status");
+      if (res.ok) {
+        const data = await res.json();
+        setDatasetStatus(data);
+      }
+    } catch {}
+  };
 
   const fetchGraphData = async () => {
     setLoading(true);
@@ -56,6 +70,7 @@ export default function AnalystWorkspace() {
       setEdges(data.edges || []);
       setClusters(data.clusters || []);
       setSummary(data.summary || null);
+      await fetchDatasetStatus();
     } catch {
       setErrorMsg("Could not load graph data. Make sure backend service is running.");
     } finally {
@@ -241,6 +256,29 @@ export default function AnalystWorkspace() {
             <span className="hidden sm:inline">
               {recomputing ? "Recalculating..." : "Recompute"}
             </span>
+          </button>
+
+          {/* Active Case Badge */}
+          <div
+            onClick={() => setIsUploadModalOpen(true)}
+            className="hidden xl:flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-[var(--fb-border)] bg-[var(--fb-bg)] cursor-pointer hover:border-[var(--fb-accent-dark)] transition text-[11px]"
+            title="Click to manage or upload case data"
+          >
+            <span className={`w-2 h-2 rounded-full ${datasetStatus?.is_custom ? "bg-amber-500" : "bg-emerald-500"} animate-pulse`} />
+            <span className="text-[var(--fb-text-secondary)]">Case:</span>
+            <span className="font-semibold text-[var(--fb-text-primary)] max-w-[130px] truncate">
+              {datasetStatus?.is_custom ? datasetStatus.dataset_name : "Baseline (81 Seeds)"}
+            </span>
+          </div>
+
+          {/* Upload Custom Data Button */}
+          <button
+            onClick={() => setIsUploadModalOpen(true)}
+            className="px-3 py-1.5 rounded-md bg-[var(--fb-accent)] text-black hover:bg-[var(--fb-accent-dark)] text-xs font-bold transition flex items-center gap-1.5 shadow-xs cursor-pointer"
+            title="Upload Custom Transfer Data or Case Seeds"
+          >
+            <UploadCloud className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Upload Data</span>
           </button>
 
           {/* Network Overview Drawer Toggle */}
@@ -484,6 +522,14 @@ export default function AnalystWorkspace() {
         onToggle={() => setIsAssistantOpen(!isAssistantOpen)}
         externalPrompt={assistantPrompt}
         onClearExternalPrompt={() => setAssistantPrompt(null)}
+      />
+
+      {/* Custom Case Data Upload Modal */}
+      <UploadModal
+        isOpen={isUploadModalOpen}
+        onClose={() => setIsUploadModalOpen(false)}
+        onUploadSuccess={fetchGraphData}
+        currentDataset={datasetStatus}
       />
     </div>
   );

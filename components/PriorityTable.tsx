@@ -13,6 +13,7 @@ import {
   ArrowDownLeft,
   ArrowUpRight,
   Network,
+  Download,
 } from "lucide-react";
 import { GraphNode, ROLE_COLORS } from "./GraphView";
 
@@ -70,6 +71,51 @@ export default function PriorityTable({
     return filteredNodes.slice(start, start + pageSize);
   }, [filteredNodes, page]);
 
+  const handleExportReferralList = () => {
+    const headers = [
+      "Rank",
+      "Client_GID",
+      "Assigned_Role",
+      "Priority_Score",
+      "AML_Role_Evidence_Rationale",
+      "Total_Incoming_KZT",
+      "Total_Outgoing_KZT",
+      "Pass_Through_Ratio",
+      "Is_Law_Enforcement_Seed",
+      "Circular_Flow_Flag",
+      "Rapid_Transit_Flag",
+      "Structuring_Risk_Flag",
+    ];
+
+    const rows = filteredNodes.map((n, idx) => [
+      idx + 1,
+      n.gid,
+      `"${n.role}"`,
+      n.priority_score.toFixed(4),
+      `"${n.evidence.replace(/"/g, '""')}"`,
+      n.in_kzt,
+      n.out_kzt,
+      n.pass_through !== null ? (n.pass_through * 100).toFixed(1) + "%" : "N/A",
+      n.is_seed ? "YES" : "NO",
+      n.in_cycle ? "YES" : "NO",
+      n.rapid_transit ? "YES" : "NO",
+      n.structuring_risk ? "YES" : "NO",
+    ]);
+
+    const csvContent = [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute(
+      "download",
+      `law_enforcement_inquiry_referral_list_${new Date().toISOString().slice(0, 10)}.csv`
+    );
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div className="flex flex-col h-full bg-[var(--fb-bg)] text-[var(--fb-text-primary)] p-6 overflow-hidden">
       {/* Controls Bar */}
@@ -80,7 +126,7 @@ export default function PriorityTable({
             Investigation Queue (Priority Nodes)
           </h2>
           <p className="text-xs text-[var(--fb-text-secondary)] mt-0.5">
-            Ranked risk candidates across all 2,248 accounts. Select any account to inspect details or open its network connections.
+            Ranked risk candidates across all {nodes.length.toLocaleString()} accounts. Select any account to inspect details or open its network connections.
           </p>
         </div>
 
@@ -132,6 +178,16 @@ export default function PriorityTable({
             <option value="elevated">Elevated Risk (Score 0.25 - 0.50)</option>
             <option value="moderate">Moderate / Low (Score &lt; 0.25)</option>
           </select>
+
+          {/* Export Referral Dossier Button */}
+          <button
+            onClick={handleExportReferralList}
+            className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-[var(--fb-border)] bg-[var(--fb-surface)] hover:bg-[var(--fb-border)] text-[var(--fb-text-primary)] transition flex items-center gap-1.5 cursor-pointer shadow-xs"
+            title="Download Law Enforcement Referral List (CSV)"
+          >
+            <Download className="w-3.5 h-3.5 text-emerald-600" />
+            <span>Export Referral List</span>
+          </button>
 
           {/* Open Network Button */}
           <button

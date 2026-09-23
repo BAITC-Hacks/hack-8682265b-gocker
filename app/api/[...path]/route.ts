@@ -39,14 +39,23 @@ export async function POST(
   const backendUrl = process.env.BACKEND_URL || "http://127.0.0.1:8000";
   const search = request.nextUrl.search;
   const targetUrl = `${backendUrl}/${path.join("/")}${search}`;
-  const body = await request.text();
+  const contentType = request.headers.get("content-type") || "";
+  let body: any;
+  if (contentType.includes("application/json") || contentType.includes("text/")) {
+    body = await request.text();
+  } else {
+    body = await request.arrayBuffer();
+  }
 
   try {
+    const forwardHeaders: Record<string, string> = {};
+    if (contentType) {
+      forwardHeaders["Content-Type"] = contentType;
+    }
+
     const res = await fetch(targetUrl, {
       method: "POST",
-      headers: {
-        "Content-Type": request.headers.get("content-type") || "application/json",
-      },
+      headers: forwardHeaders,
       body,
       cache: "no-store",
     });
