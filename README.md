@@ -47,12 +47,15 @@
 ---
 
 <a name="english"></a>
+
 # English
 
 ## Overview
+
 **Money Graph** is an end-to-end financial transaction network reconstruction and role attribution platform built for financial crime investigation and compliance units. It processes multi-hop bank transaction exports (`edges.parquet`, `nodes.parquet`, `transactions.parquet`), builds a directed weighted graph, computes network centrality and community metrics, deterministically attributes roles to 2,248 accounts, ranks investigation targets by priority score, and presents an interactive visual dashboard with an embedded AML AI Assistant.
 
 ### Key Capabilities
+
 - **6-Role Deterministic Attribution**: Coordinator, Consolidator, Distributor, Transit, Terminal, Peripheral with objective rule-tracing chains.
 - **Priority Investigation Queue & Case Escalation**: Triage target accounts, tag status (`unreviewed`, `escalated`, `cleared`), add analyst notes, and export official Law Enforcement Referral Dossiers (CSV & printable PDF).
 - **Interactive 60 FPS Canvas Graph**: GPU-friendly visualizer with directional arrows, volume-proportional edges, cluster coloring, and hop-neighborhood filtering.
@@ -115,6 +118,7 @@ Roles are evaluated sequentially from top to bottom; the **first matching rule w
 $$\text{priority\_score} = \text{clip}\Big(0.35 \cdot \text{norm}(bw) + 0.25 \cdot \text{norm}(pr) + 0.20 \cdot \text{norm}(in) + 0.10 \cdot \text{norm}(out) + 0.10 \cdot is\_seed, 0, 1\Big)$$
 
 Where:
+
 - $\text{norm}(x) = \frac{x - x_{min}}{x_{max} - x_{min}}$ across all nodes.
 - **Priority Multiplier**: Nodes classified as `coordinator` or `consolidator` receive a $1.15\times$ boost (clipped to 1.0) to elevate key operational actors in the investigation queue.
 
@@ -159,12 +163,15 @@ flowchart LR
 ---
 
 <a name="русский"></a>
+
 # Русский
 
 ## Обзор проекта
+
 **Money Graph** — это аналитическая платформа для реконструкции сетей финансовых транзакций, выявления схем отмывания денег (AML) и детерминированной атрибуции ролей участников. Система обрабатывает выгрузки банковских переводов (`edges.parquet`, `nodes.parquet`, `transactions.parquet`), строит направленный взвешенный граф, рассчитывает метрики центральности и сообществ, присваивает роли 2 248 аккаунтам, ранжирует цели расследования по шкале приоритета и предоставляет аналитику интерактивный дашборд с AI-ассистентом.
 
 ### Ключевой функционал
+
 - **Детерминированная модель из 6 ролей**: Координатор (`coordinator`), Консолидатор (`consolidator`), Дистрибьютор (`distributor`), Транзитник (`transit`), Терминал (`terminal`), Периферия (`peripheral`) с прозрачной трассировкой правил.
 - **Очередь расследования и эскалация кейсов**: Маркировка статусов клиентов (`unreviewed`, `escalated`, `cleared`), ведение заметок комплаенс-офицера и выгрузка официальных досье для передачи в правоохранительные органы (CSV и печатный PDF).
 - **Интерактивный граф (Canvas 60 FPS)**: Оптимизированный рендеринг направленных потоков, толщина ребер пропорциональна объему (log-scale), кластеризация Louvain и фокус на подграфах.
@@ -213,7 +220,7 @@ backend/.venv/bin/python -m pytest backend/tests -v
 
 | Роль | Правило и пороговые значения метрик | AML-интерпретация |
 | :--- | :--- | :--- |
-| **`coordinator`** | • `betweenness` в топ-5% сети (`>= 0.000155`)<br>• И (`is_seed = true` ИЛИ соединяет $\ge 2$ разных кластеров)<br>• И `in_partners + out_partners >= 5` | Стратегические связующие звенья между кластерами или операциями семян. Ключевые цели для разрыва коммуникаций в сети. |
+| **`coordinator`** | • `betweenness` в топ-5% сети (`>= 0.000155`)<br>• И (`is_seed = true` ИЛИ соединяет $\ge 2$ разных кластеров)<br>• И `in_partners + out_partners >= 5` | Стратегические связующие звенья между кластерами или операциями сидов. Ключевые цели для разрыва коммуникаций в сети. |
 | **`consolidator`** | • `in_partners >= 8`<br>• И (`pass_ratio` не определен ИЛИ `pass_ratio < 0.3`) | Аккумулирует средства от множества плательщиков с минимальным дальнейшим выводом (<30%). Касса сбора. |
 | **`distributor`** | • `out_partners >= 15` | Веерное распределение средств широкому кругу получателей (классический узел распыления / смурфинга). |
 | **`transit`** | • `0.8 <= pass_ratio <= 1.2`<br>• И `in_partners >= 1` И `out_partners >= 1` | Транзитный посредник, пересылающий ~80–120% полученных средств с минимальным удержанием. |
@@ -225,7 +232,7 @@ backend/.venv/bin/python -m pytest backend/tests -v
 ## Ограничения данных и краевые эффекты
 
 1. **Артефакт обрезки 4-го шага (`depth = 4`)**:
-   444 счета имеют `depth = 4` и `out_partners = 0` только потому, что сбор данных был остановлен на 4-м шаге от семян. Они явно помечены флагом `truncated_by_depth = true` и получают пониженный коэффициент доверия ($\times 0.6$).
+   444 счета имеют `depth = 4` и `out_partners = 0` только потому, что сбор данных был остановлен на 4-м шаге от сидов. Они явно помечены флагом `truncated_by_depth = true` и получают пониженный коэффициент доверия ($\times 0.6$).
 2. **Однонаправленная видимость исходящих потоков**:
    В выборку вошли только исходящие транзакции наблюдаемых клиентов. Поступления из внешних источников не зафиксированы.
 3. **Порог фильтрации 5 000 KZT**:
