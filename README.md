@@ -20,11 +20,16 @@
 ## Screenshots & Media / Скриншоты и Демо
 
 
-### Application Walkthrough Video
-<!-- VIDEO: Add demo video embed / link here -->
-<!-- Example: [![Money Graph Demo Video](https://img.shields.io/badge/Demo%20Video-Watch%20Now-red?style=for-the-badge&logo=youtube)](https://your-video-link.com) -->
+### Application Walkthrough Video / Видеодемонстрация системы
+
 <div align="center">
-  <p><i>📹 [![Money Graph Devmo Video](https://youtu.be/AlUuox2UAwU)](https://youtu.be/AlUuox2UAwU)</i></p>
+  <a href="https://www.youtube.com/watch?v=AlUuox2UAwU" target="_blank" rel="noopener noreferrer">
+    <img src="https://img.youtube.com/vi/AlUuox2UAwU/maxresdefault.jpg" width="800" alt="Freedom Bank Money Graph — Video Walkthrough" style="border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); max-width: 100%;" />
+  </a>
+  <br/><br/>
+  <a href="https://www.youtube.com/watch?v=AlUuox2UAwU" target="_blank" rel="noopener noreferrer">
+    <img src="https://img.shields.io/badge/YouTube-Watch%20Demo%20Video%20(2%20min)-FF0000?style=for-the-badge&logo=youtube&logoColor=white" alt="Watch Demo Video on YouTube" />
+  </a>
 </div>
 
 <br/>
