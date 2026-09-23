@@ -176,7 +176,7 @@ export default function PriorityTable({
       flags.push({
         key: "SEED",
         label: "SEED",
-        color: "bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-800",
+        color: "bg-emerald-50 text-emerald-700 border-emerald-200/90 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800/90",
         desc: "Confirmed seed account",
       });
     }
@@ -184,7 +184,7 @@ export default function PriorityTable({
       flags.push({
         key: "STRUCT",
         label: "STRUCT",
-        color: "bg-amber-100 text-amber-900 border-amber-400 dark:bg-amber-950 dark:text-amber-300 dark:border-amber-800",
+        color: "bg-amber-50 text-amber-800 border-amber-200/90 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800/90",
         desc: "Structuring pattern near 5,000 KZT cutoff",
       });
     }
@@ -192,7 +192,7 @@ export default function PriorityTable({
       flags.push({
         key: "RAPID",
         label: "RAPID",
-        color: "bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-950 dark:text-blue-300 dark:border-blue-800",
+        color: "bg-blue-50 text-blue-700 border-blue-200/90 dark:bg-blue-950/60 dark:text-blue-300 dark:border-blue-800/90",
         desc: `Rapid pass-through turnaround (${node.turnaround_hours ?? 48}h)`,
       });
     }
@@ -200,7 +200,7 @@ export default function PriorityTable({
       flags.push({
         key: "CYCLE",
         label: "CYCLE",
-        color: "bg-purple-100 text-purple-800 border-purple-300 dark:bg-purple-950 dark:text-purple-300 dark:border-purple-800",
+        color: "bg-purple-50 text-purple-700 border-purple-200/90 dark:bg-purple-950/60 dark:text-purple-300 dark:border-purple-800/90",
         desc: "Circular money flow loop / return cycle",
       });
     }
@@ -489,9 +489,9 @@ export default function PriorityTable({
                       <div className="flex items-center gap-2.5">
                         <span
                           className={`font-mono font-bold text-xs ${isCritical
-                              ? "text-rose-600"
+                              ? "text-rose-500 dark:text-rose-400"
                               : isElevated
-                                ? "text-amber-600"
+                                ? "text-amber-500 dark:text-amber-400"
                                 : "text-[var(--fb-text-secondary)]"
                             }`}
                         >
@@ -500,9 +500,9 @@ export default function PriorityTable({
                         <div className="w-20 bg-[var(--fb-border)] h-1.5 rounded-full overflow-hidden">
                           <div
                             className={`h-full rounded-full ${isCritical
-                                ? "bg-rose-500"
+                                ? "bg-rose-400"
                                 : isElevated
-                                  ? "bg-amber-500"
+                                  ? "bg-amber-400"
                                   : "bg-[var(--fb-text-secondary)]"
                               }`}
                             style={{

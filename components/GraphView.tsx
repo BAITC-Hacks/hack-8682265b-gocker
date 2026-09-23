@@ -814,22 +814,20 @@ export default function GraphView({
             <div className="flex items-center p-1 rounded-xl fb-card bg-[var(--fb-surface)] border border-[var(--fb-border)] shadow-sm text-xs">
               <button
                 onClick={() => setViewMode("key_actors")}
-                className={`px-3 py-1.5 font-semibold rounded-lg transition flex items-center gap-1.5 cursor-pointer ${
-                  viewMode === "key_actors"
+                className={`px-3 py-1.5 font-semibold rounded-lg transition flex items-center gap-1.5 cursor-pointer ${viewMode === "key_actors"
                     ? "bg-[var(--fb-accent)] text-black shadow-xs"
                     : "text-[var(--fb-text-secondary)] hover:text-[var(--fb-text-primary)]"
-                }`}
+                  }`}
               >
                 <Sparkles className="w-3.5 h-3.5" />
                 Key Actors ({nodes.filter((n) => n.role === "coordinator" || n.role === "consolidator" || n.role === "distributor" || n.is_seed || n.priority_score >= 0.25).length})
               </button>
               <button
                 onClick={() => setShowFullWarning(true)}
-                className={`px-3 py-1.5 font-semibold rounded-lg transition flex items-center gap-1.5 cursor-pointer ${
-                  viewMode === "full"
+                className={`px-3 py-1.5 font-semibold rounded-lg transition flex items-center gap-1.5 cursor-pointer ${viewMode === "full"
                     ? "bg-[var(--fb-accent)] text-black shadow-xs"
                     : "text-[var(--fb-text-secondary)] hover:text-[var(--fb-text-primary)]"
-                }`}
+                  }`}
               >
                 <Layers className="w-3.5 h-3.5" />
                 Entire Network ({nodes.length})
@@ -841,11 +839,10 @@ export default function GraphView({
           {displayNodes.length > 50 && (
             <button
               onClick={() => setShowAllConnections(!showAllConnections)}
-              className={`pointer-events-auto px-2.5 py-1.5 text-xs font-semibold rounded-xl border transition flex items-center gap-1.5 shadow-xs cursor-pointer ${
-                showAllConnections
+              className={`pointer-events-auto px-2.5 py-1.5 text-xs font-semibold rounded-xl border transition flex items-center gap-1.5 shadow-xs cursor-pointer ${showAllConnections
                   ? "bg-amber-500/15 border-amber-500 text-amber-700 dark:text-amber-300"
                   : "bg-[var(--fb-surface)] border-[var(--fb-border)] text-[var(--fb-text-secondary)] hover:text-[var(--fb-text-primary)]"
-              }`}
+                }`}
               title="Toggle between top 60% turnover flows and all connections"
             >
               <Compass className="w-3.5 h-3.5" />
@@ -868,11 +865,10 @@ export default function GraphView({
         <div className="pointer-events-auto hidden xl:flex items-center gap-1.5 p-1 rounded-xl fb-card bg-[var(--fb-surface)] border border-[var(--fb-border)] shadow-sm text-xs">
           <button
             onClick={() => onSetRoleFilter(null)}
-            className={`px-2.5 py-1 rounded-lg transition font-medium cursor-pointer ${
-              activeRoleFilter === null
+            className={`px-2.5 py-1 rounded-lg transition font-medium cursor-pointer ${activeRoleFilter === null
                 ? "bg-[var(--fb-border)] text-[var(--fb-text-primary)] font-semibold"
                 : "text-[var(--fb-text-secondary)] hover:text-[var(--fb-text-primary)]"
-            }`}
+              }`}
           >
             All Roles
           </button>
@@ -880,11 +876,10 @@ export default function GraphView({
             <button
               key={r}
               onClick={() => onSetRoleFilter(activeRoleFilter === r ? null : r)}
-              className={`px-2.5 py-1 rounded-lg transition font-medium flex items-center gap-1.5 cursor-pointer ${
-                activeRoleFilter === r
+              className={`px-2.5 py-1 rounded-lg transition font-medium flex items-center gap-1.5 cursor-pointer ${activeRoleFilter === r
                   ? "bg-[var(--fb-border)] text-[var(--fb-text-primary)] font-semibold"
                   : "text-[var(--fb-text-secondary)] hover:text-[var(--fb-text-primary)]"
-              }`}
+                }`}
             >
               <span className="w-2 h-2 rounded-full" style={{ backgroundColor: c.bg }} />
               {c.label}

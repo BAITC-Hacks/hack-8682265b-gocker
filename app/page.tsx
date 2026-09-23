@@ -10,7 +10,6 @@ import {
   Table,
   Users,
   ChevronDown,
-  ChevronUp,
   Loader2,
   SlidersHorizontal,
   UploadCloud,
@@ -224,9 +223,11 @@ export default function AnalystWorkspace() {
       <header className="h-14 border-b border-[var(--fb-border)] bg-[var(--fb-surface)] px-4 sm:px-6 flex items-center justify-between shrink-0 z-30 flex-nowrap gap-4 xl:gap-6 min-w-0">
         {/* 1. Brand */}
         <div className="flex items-center gap-2.5 shrink-0">
-          <div className="w-8 h-8 rounded-lg bg-[var(--fb-accent)] flex items-center justify-center text-black font-extrabold">
-            <Network className="w-5 h-5 text-black" />
-          </div>
+          <img
+            src="/color_logo.svg"
+            alt="Money Graph Logo"
+            className="w-8 h-8 object-contain shrink-0"
+          />
           <div>
             <div className="flex items-center gap-1.5">
               <span className="text-xs font-extrabold tracking-tight text-[var(--fb-text-primary)]">
@@ -454,18 +455,59 @@ export default function AnalystWorkspace() {
           </div>
         )}
 
-        {/* Collapsible Network Overview Sidebar */}
+
+
+        {/* Center Canvas / Table / Cluster Explorer View */}
+        <div className="flex-1 flex flex-col h-full overflow-hidden relative">
+          {activeTab === "table" && (
+            <PriorityTable
+              nodes={nodes}
+              onSelectNode={(gid) => setSelectedGid(gid)}
+              onAskAboutNode={handleAskAboutNode}
+              onSwitchToGraph={() => setActiveTab("graph")}
+              onExplainNode={handleExplain}
+            />
+          )}
+
+          {activeTab === "clusters" && (
+            <ClusterBubbleMap
+              clusters={clusters}
+              onSelectCluster={(cId) => {
+                setActiveClusterFilter(cId);
+                setActiveTab("graph");
+              }}
+            />
+          )}
+
+          {activeTab === "graph" && (
+            <GraphView
+              nodes={nodes}
+              edges={edges}
+              selectedGid={selectedGid}
+              highlightedGids={highlightedGids}
+              onSelectNode={(gid) => setSelectedGid(gid)}
+              activeRoleFilter={activeRoleFilter}
+              onSetRoleFilter={setActiveRoleFilter}
+              activeClusterFilter={activeClusterFilter}
+              onClearClusterFilter={() => setActiveClusterFilter(null)}
+              onOpenClusterExplorer={() => setActiveTab("clusters")}
+            />
+          )}
+        </div>
+
+        {/* Collapsible Network Overview Sidebar (Docked to the Right) */}
         {isOverviewOpen && (
-          <aside className="w-72 border-r border-[var(--fb-border)] bg-[var(--fb-surface)] flex flex-col shrink-0 z-20 overflow-y-auto animate-in slide-in-from-left duration-200">
+          <aside className="w-72 sm:w-80 border-l border-[var(--fb-border)] bg-[var(--fb-surface)] flex flex-col shrink-0 z-20 overflow-y-auto animate-in slide-in-from-right duration-200 shadow-sm">
             <div className="p-3.5 border-b border-[var(--fb-border)] flex items-center justify-between">
               <span className="text-xs font-bold uppercase tracking-wider text-[var(--fb-text-primary)]">
                 {t.overview_title}
               </span>
               <button
                 onClick={() => setIsOverviewOpen(false)}
-                className="text-[var(--fb-text-secondary)] hover:text-[var(--fb-text-primary)] p-0.5"
+                className="text-[var(--fb-text-secondary)] hover:text-[var(--fb-text-primary)] p-0.5 rounded hover:bg-[var(--fb-border)] transition cursor-pointer"
+                title="Close"
               >
-                <ChevronUp className="w-4 h-4" />
+                <X className="w-4 h-4" />
               </button>
             </div>
 
@@ -549,19 +591,19 @@ export default function AnalystWorkspace() {
                 </span>
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between p-2 rounded-lg bg-[var(--fb-bg)] border border-[var(--fb-border)]">
-                    <span className="text-purple-700 dark:text-purple-400 font-semibold">{t.overview_circular_loops}</span>
+                    <span className="text-purple-600 dark:text-purple-400 font-semibold">{t.overview_circular_loops}</span>
                     <strong className="font-mono text-[var(--fb-text-primary)]">
                       {nodes.filter((n) => n.in_cycle).length}
                     </strong>
                   </div>
                   <div className="flex items-center justify-between p-2 rounded-lg bg-[var(--fb-bg)] border border-[var(--fb-border)]">
-                    <span className="text-blue-700 dark:text-blue-400 font-semibold">{t.overview_rapid_transit}</span>
+                    <span className="text-blue-600 dark:text-blue-400 font-semibold">{t.overview_rapid_transit}</span>
                     <strong className="font-mono text-[var(--fb-text-primary)]">
                       {nodes.filter((n) => n.rapid_transit).length}
                     </strong>
                   </div>
                   <div className="flex items-center justify-between p-2 rounded-lg bg-[var(--fb-bg)] border border-[var(--fb-border)]">
-                    <span className="text-amber-700 dark:text-amber-400 font-semibold">{t.overview_structuring_risk}</span>
+                    <span className="text-amber-600 dark:text-amber-400 font-semibold">{t.overview_structuring_risk}</span>
                     <strong className="font-mono text-[var(--fb-text-primary)]">
                       {nodes.filter((n) => n.structuring_risk).length}
                     </strong>
@@ -575,7 +617,7 @@ export default function AnalystWorkspace() {
                   <span className="text-[10px] text-[var(--fb-text-secondary)] uppercase font-bold">
                     {t.overview_disruption_title}
                   </span>
-                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 border border-emerald-300">
+                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800">
                     {t.overview_disruption_badge}
                   </span>
                 </div>
@@ -591,14 +633,14 @@ export default function AnalystWorkspace() {
                     <div className="text-[var(--fb-text-secondary)]">{t.overview_freeze_top5}</div>
                     <div className="flex justify-between font-semibold text-[var(--fb-text-primary)] mt-0.5">
                       <span>{t.overview_splits_into}</span>
-                      <span className="font-mono text-emerald-700 font-bold">{t.overview_fragments_5}</span>
+                      <span className="font-mono text-emerald-600 dark:text-emerald-400 font-bold">{t.overview_fragments_5}</span>
                     </div>
                   </div>
                   <div className="pt-1.5 border-t border-[var(--fb-border)]">
                     <div className="text-[var(--fb-text-secondary)]">{t.overview_freeze_top10}</div>
                     <div className="flex justify-between font-semibold text-[var(--fb-text-primary)] mt-0.5">
                       <span>{t.overview_splits_into}</span>
-                      <span className="font-mono text-emerald-700 font-bold">{t.overview_fragments_10}</span>
+                      <span className="font-mono text-emerald-600 dark:text-emerald-400 font-bold">{t.overview_fragments_10}</span>
                     </div>
                   </div>
                 </div>
@@ -611,7 +653,7 @@ export default function AnalystWorkspace() {
                     <BarChart3 className="w-3 h-3 text-[var(--fb-accent-dark)]" />
                     {t.overview_sensitivity_title}
                   </span>
-                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-blue-100 text-blue-800 border border-blue-300">
+                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-950/60 dark:text-blue-300 dark:border-blue-800">
                     {t.overview_sensitivity_badge}
                   </span>
                 </div>
@@ -663,7 +705,7 @@ export default function AnalystWorkspace() {
                             <div className="w-full bg-[var(--fb-surface)] h-2 rounded-full overflow-hidden border border-[var(--fb-border)]">
                               <div
                                 className={`h-full rounded-full transition-all duration-300 ${
-                                  isBase ? "bg-[var(--fb-accent)]" : "bg-neutral-400 dark:bg-neutral-600"
+                                  isBase ? "bg-[var(--fb-accent)]" : "bg-neutral-300 dark:bg-neutral-700"
                                 }`}
                                 style={{ width: `${pct}%` }}
                               />
@@ -694,7 +736,7 @@ export default function AnalystWorkspace() {
                     <ClipboardList className="w-3 h-3 text-emerald-600" />
                     {t.overview_data_gaps_title}
                   </span>
-                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-purple-100 text-purple-800 border border-purple-300">
+                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-purple-50 text-purple-700 border border-purple-200 dark:bg-purple-950/60 dark:text-purple-300 dark:border-purple-800">
                     {t.overview_data_gaps_badge}
                   </span>
                 </div>
@@ -710,7 +752,7 @@ export default function AnalystWorkspace() {
                           <span className="text-[11px] font-bold text-[var(--fb-text-primary)]">
                             {gap.category}
                           </span>
-                          <span className="px-1.5 py-0.2 rounded text-[9px] font-mono font-bold bg-amber-100 text-amber-900 border border-amber-300 shrink-0">
+                          <span className="px-1.5 py-0.2 rounded text-[9px] font-mono font-bold bg-amber-50 text-amber-800 border border-amber-200 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800 shrink-0">
                             {gap.affected_count} {t.overview_affected}
                           </span>
                         </div>
@@ -747,44 +789,6 @@ export default function AnalystWorkspace() {
             </div>
           </aside>
         )}
-
-        {/* Center Canvas / Table / Cluster Explorer View */}
-        <div className="flex-1 flex flex-col h-full overflow-hidden relative">
-          {activeTab === "table" && (
-            <PriorityTable
-              nodes={nodes}
-              onSelectNode={(gid) => setSelectedGid(gid)}
-              onAskAboutNode={handleAskAboutNode}
-              onSwitchToGraph={() => setActiveTab("graph")}
-              onExplainNode={handleExplain}
-            />
-          )}
-
-          {activeTab === "clusters" && (
-            <ClusterBubbleMap
-              clusters={clusters}
-              onSelectCluster={(cId) => {
-                setActiveClusterFilter(cId);
-                setActiveTab("graph");
-              }}
-            />
-          )}
-
-          {activeTab === "graph" && (
-            <GraphView
-              nodes={nodes}
-              edges={edges}
-              selectedGid={selectedGid}
-              highlightedGids={highlightedGids}
-              onSelectNode={(gid) => setSelectedGid(gid)}
-              activeRoleFilter={activeRoleFilter}
-              onSetRoleFilter={setActiveRoleFilter}
-              activeClusterFilter={activeClusterFilter}
-              onClearClusterFilter={() => setActiveClusterFilter(null)}
-              onOpenClusterExplorer={() => setActiveTab("clusters")}
-            />
-          )}
-        </div>
 
         {/* Right Persistent Node Card (when node selected) */}
         {selectedNode && (

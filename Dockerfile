@@ -11,6 +11,7 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
 ENV NEXT_TELEMETRY_DISABLED=1
+RUN mkdir -p /app/public
 RUN bun run build
 
 FROM node:22-alpine AS runner
