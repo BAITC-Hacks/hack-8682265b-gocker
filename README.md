@@ -150,7 +150,7 @@ Roles are evaluated sequentially from top to bottom; the **first matching rule w
 ## Priority Score Formula
 
 $$
-priority\_score = \text{clip}\Big(0.35 \cdot \text{norm}(bw) + 0.25 \cdot \text{norm}(pr) + 0.20 \cdot \text{norm}(in) + 0.10 \cdot \text{norm}(out) + 0.10 \cdot is\_seed, 0, 1\Big)
+priority\_{score} = \text{clip}\Big(0.35 \cdot \text{norm}(bw) + 0.25 \cdot \text{norm}(pr) + 0.20 \cdot \text{norm}(in) + 0.10 \cdot \text{norm}(out) + 0.10 \cdot is\_{seed}, 0, 1\Big)
 $$
 
 Where:
