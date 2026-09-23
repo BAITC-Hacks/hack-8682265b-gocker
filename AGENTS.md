@@ -14,41 +14,37 @@ This project is the **Money Graph** AML platform for HackAlem AI. All agents wor
 
 ---
 
-## 1. Running the Automated Test Suite
+## 1. Running the Automated Test Suites
 
-The test suite validates compliance with the HackAlem AI Case Study Brief and the PROMPTS.md specification. It consists of 21 tests covering data ingestion, graph metrics, role attribution, scoring, CSV schemas, REST endpoints, and latency constraints.
-
-### Run All Tests
-Always run tests using the dedicated Python virtual environment located at `backend/.venv`:
+### Frontend Tests (Bun)
+The frontend test suite validates Next.js API proxy routes, role color palettes, search and filtering logic, risk priority categorization, log-scale edge thickness, component state transformations, and live backend integration.
 
 ```bash
-# From repository root:
-backend/.venv/bin/python -m pytest backend/tests -v
+# Run all frontend tests:
+bun test
 
-# Or from the backend/ directory:
-cd backend
-.venv/bin/python -m pytest tests -v
+# Run specific frontend test files:
+bun test tests/api-proxy.test.ts
+bun test tests/graph-utils.test.ts
+bun test tests/components-logic.test.ts
+bun test tests/integration.test.ts
 ```
 
-### Run Specific Test Modules
+### Backend Tests (Pytest)
+The backend test suite validates compliance with the HackAlem AI Case Study Brief and the PROMPTS.md specification. It covers data ingestion, graph metrics, role attribution, scoring, CSV schemas, REST endpoints, and latency constraints.
 
 ```bash
-# 1. Test FastAPI endpoints (/health, /graph, /graph/node/{gid}, /graph/top, /assistant, /pipeline/run)
+# Run all backend tests:
+backend/.venv/bin/python -m pytest backend/tests -v
+# or if inside backend/:
+pytest tests -v
+
+# Run specific backend test modules:
 backend/.venv/bin/python -m pytest backend/tests/test_api_endpoints.py -v
-
-# 2. Test output CSV schemas (nodes_roles.csv, clusters.csv, top_nodes.csv)
 backend/.venv/bin/python -m pytest backend/tests/test_csv_exports.py -v
-
-# 3. Test raw parquet loading, seed counts, and depth-4 cutoff artifacts
 backend/.venv/bin/python -m pytest backend/tests/test_data_loader.py -v
-
-# 4. Test DiGraph building, 16 connected components, Louvain clusters, and centralities
 backend/.venv/bin/python -m pytest backend/tests/test_graph_and_metrics.py -v
-
-# 5. Test deterministic role rules, evidence strings, and priority scores
 backend/.venv/bin/python -m pytest backend/tests/test_roles_and_priority.py -v
-
-# 6. Test latency constraint (< 5 minutes allowed, benchmark is ~1.5s)
 backend/.venv/bin/python -m pytest backend/tests/test_performance.py -v
 ```
 
@@ -56,6 +52,15 @@ backend/.venv/bin/python -m pytest backend/tests/test_performance.py -v
 
 ## 2. Test Suite Architecture & Verification Map
 
+### Frontend Test Matrix (18 tests)
+| Test File | Target Area | What It Verifies |
+|---|---|---|
+| `tests/api-proxy.test.ts` | `app/api/[...path]/route.ts` | • Proxies GET requests with path and query parameters<br>• Proxies POST requests with JSON payload and headers<br>• Handles backend connection failures gracefully with HTTP 502 |
+| `tests/graph-utils.test.ts` | `components/GraphView.tsx`<br>Color & Scaling logic | • `ROLE_COLORS` dictionary contains all 6 roles with valid hex codes<br>• Search filters matching GID, role, and evidence strings<br>• Risk tiering: critical ($\ge 0.5$), elevated ($[0.25, 0.5)$), moderate ($< 0.25$)<br>• Edge thickness scaling with log-volume formula<br>• Formatting for turnaround hours, pass ratio, and currency |
+| `tests/components-logic.test.ts` | `PriorityTable.tsx`<br>`NodeCard.tsx`<br>`AssistantPanel.tsx` | • PriorityTable sorting descending by priority score<br>• NodeCard counterparty incoming/outgoing neighbor extraction<br>• Hop-4 boundary badge detection<br>• Semicolon-separated cluster top GID parsing<br>• Assistant regex extraction of 18-digit GIDs from natural text |
+| `tests/integration.test.ts` | End-to-End API Integration | • Verifies `/health` endpoint status<br>• Verifies `/graph` payload schema (2,248 nodes, 3,119 edges, 81 seeds)<br>• Verifies `/graph/top` delivers ranked list with required fields |
+
+### Backend Test Matrix (21 tests)
 | Test File | Target Module | What It Verifies |
 |---|---|---|
 | `test_data_loader.py` | `app.pipeline.load_data` | • 2,248 nodes, 3,119 edges, 4,840 txs<br>• Exactly 81 seed accounts (`is_seed=True`)<br>• Minimum 5,000 KZT transaction cutoff<br>• Identifies exactly 444 depth-4 cutoff artifact nodes |
@@ -69,7 +74,7 @@ backend/.venv/bin/python -m pytest backend/tests/test_performance.py -v
 
 ## 3. Strict Rules & Constraints for AI Agents
 
-When modifying backend code, you **MUST** ensure all 21 tests continue to pass. Pay close attention to these domain constraints:
+When modifying code, you **MUST** ensure all tests continue to pass. Pay close attention to these domain constraints:
 
 1. **Dual Column Compatibility in CSV Exports**:
    - `nodes_roles.csv` must provide **both** `id` (required by HackAlem brief) and `gid` (required by frontend / PROMPTS.md).
@@ -95,6 +100,10 @@ When modifying backend code, you **MUST** ensure all 21 tests continue to pass. 
 ## 4. Helpful Commands for Agents
 
 ```bash
+# Run all tests:
+bun test
+backend/.venv/bin/python -m pytest backend/tests -v
+
 # Recompute pipeline standalone:
 backend/.venv/bin/python -m app.pipeline.run
 
@@ -102,7 +111,5 @@ backend/.venv/bin/python -m app.pipeline.run
 backend/.venv/bin/python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 
 # Start frontend locally (port 3000):
-nix-shell -p bun --run "bun dev"
-# or
 bun dev
 ```

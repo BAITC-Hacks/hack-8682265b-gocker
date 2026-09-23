@@ -34,7 +34,6 @@ backend/.venv/bin/python -m pytest backend/tests -v
 
 # Frontend test suite (proxy routes, role colors, filtering, UI logic):
 bun test
-# (or on NixOS: nix-shell -p bun --run "bun test")
 ```
 
 ---
