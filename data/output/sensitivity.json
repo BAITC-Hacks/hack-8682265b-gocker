@@ -1,0 +1,115 @@
+{
+  "consolidator": {
+    "threshold_field": "in_partners",
+    "base": 8,
+    "variants": [
+      {
+        "value": 5,
+        "n_nodes": 24
+      },
+      {
+        "value": 6,
+        "n_nodes": 16
+      },
+      {
+        "value": 8,
+        "n_nodes": 6
+      },
+      {
+        "value": 10,
+        "n_nodes": 1
+      },
+      {
+        "value": 11,
+        "n_nodes": 1
+      }
+    ],
+    "commentary": "The consolidator threshold sits in a stable region: \u00b120% changes the flagged count by only 5-10 nodes (from base 6), not tens."
+  },
+  "coordinator": {
+    "threshold_field": "total_degree",
+    "base": 5,
+    "variants": [
+      {
+        "value": 3,
+        "n_nodes": 95
+      },
+      {
+        "value": 4,
+        "n_nodes": 92
+      },
+      {
+        "value": 5,
+        "n_nodes": 92
+      },
+      {
+        "value": 6,
+        "n_nodes": 83
+      },
+      {
+        "value": 7,
+        "n_nodes": 73
+      }
+    ],
+    "commentary": "Coordinator qualification at degree 5 is structurally robust: \u00b120% shifts candidate volume by 0-9 accounts around base 92."
+  },
+  "distributor": {
+    "threshold_field": "out_partners",
+    "base": 15,
+    "variants": [
+      {
+        "value": 9,
+        "n_nodes": 69
+      },
+      {
+        "value": 12,
+        "n_nodes": 53
+      },
+      {
+        "value": 15,
+        "n_nodes": 43
+      },
+      {
+        "value": 18,
+        "n_nodes": 32
+      },
+      {
+        "value": 21,
+        "n_nodes": 28
+      }
+    ],
+    "commentary": "Distributor threshold (out_partners=15) captures true high-fanout dispersers: \u00b120% variation alters count by 10-11 nodes."
+  },
+  "transit": {
+    "threshold_field": "pass_ratio_tolerance",
+    "base": 0.2,
+    "variants": [
+      {
+        "value": 0.12,
+        "label": "\u00b112%",
+        "n_nodes": 53
+      },
+      {
+        "value": 0.16,
+        "label": "\u00b116%",
+        "n_nodes": 62
+      },
+      {
+        "value": 0.2,
+        "label": "\u00b120%",
+        "n_nodes": 72
+      },
+      {
+        "value": 0.24,
+        "label": "\u00b124%",
+        "n_nodes": 81
+      },
+      {
+        "value": 0.28,
+        "label": "\u00b128%",
+        "n_nodes": 96
+      }
+    ],
+    "commentary": "Transit corridor window (pass_ratio [0.80, 1.20]) maintains tight topology bounds: \u00b120% window adjustment alters count by 9-10 nodes."
+  }
+}

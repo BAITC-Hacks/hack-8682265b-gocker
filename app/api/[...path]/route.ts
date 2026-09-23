@@ -17,11 +17,16 @@ export async function GET(
       cache: "no-store",
     });
     const data = await res.arrayBuffer();
+    const headers: Record<string, string> = {
+      "Content-Type": res.headers.get("content-type") || "application/json",
+    };
+    const disposition = res.headers.get("content-disposition");
+    if (disposition) {
+      headers["Content-Disposition"] = disposition;
+    }
     return new NextResponse(data, {
       status: res.status,
-      headers: {
-        "Content-Type": res.headers.get("content-type") || "application/json",
-      },
+      headers,
     });
   } catch (err: any) {
     return NextResponse.json(

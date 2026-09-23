@@ -4,6 +4,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.routers.graph import router as graph_router, load_graph_data_from_disk
 from app.routers.pipeline import router as pipeline_router
 from app.routers.assistant import router as assistant_router
+from app.routers.reviews import router as reviews_router
+from app.routers.explain import router as explain_router
+from app.routers.sensitivity import router as sensitivity_router
+from app.routers.completeness import router as completeness_router
 
 
 @asynccontextmanager
@@ -34,6 +38,10 @@ app.add_middleware(
 app.include_router(graph_router)
 app.include_router(pipeline_router)
 app.include_router(assistant_router)
+app.include_router(reviews_router)
+app.include_router(explain_router)
+app.include_router(sensitivity_router)
+app.include_router(completeness_router)
 
 
 @app.get("/health")

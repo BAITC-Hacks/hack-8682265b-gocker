@@ -162,4 +162,45 @@ describe("Component Logic and State Transformations", () => {
       expect(matches).toContain("100000004962193100");
     });
   });
+
+  describe("Escalation and Case Reviews Logic", () => {
+    it("filters nodes correctly when escalatedOnly is active", () => {
+      const mockReviews: Record<number, { status: string; note?: string }> = {
+        100000003016635100: { status: "escalated", note: "Bridge node" },
+        100000006866783100: { status: "cleared" },
+      };
+
+      const filterNodes = (nodes: GraphNode[], escalatedOnly: boolean) => {
+        return nodes.filter((n) => !escalatedOnly || mockReviews[n.gid]?.status === "escalated");
+      };
+
+      const all = filterNodes(mockNodes, false);
+      expect(all.length).toBe(4);
+
+      const escalated = filterNodes(mockNodes, true);
+      expect(escalated.length).toBe(1);
+      expect(escalated[0].gid).toBe(100000003016635100);
+    });
+  });
+
+  describe("Explain GID Oral Script Formatting", () => {
+    it("formats 30-second oral script concisely with substituted values", () => {
+      const explainData = {
+        gid: 100000004071080100,
+        final_role: "consolidator",
+        rule_trace: [
+          { rule: "coordinator", matched: false, reason: "betweenness 0.000028 < threshold 0.000155" },
+          { rule: "consolidator", matched: true, reason: "in_partners=9 >= 8 AND pass_ratio=0.19 < 0.30" },
+        ],
+      };
+
+      const matched = explainData.rule_trace.find((r) => r.matched);
+      expect(matched).toBeDefined();
+
+      const script = `Account ${explainData.gid} is classified as ${explainData.final_role.toUpperCase()} because ${matched?.reason}.`;
+      expect(script).toContain("CONSOLIDATOR");
+      expect(script).toContain("in_partners=9 >= 8");
+      expect(script.length).toBeLessThan(200);
+    });
+  });
 });

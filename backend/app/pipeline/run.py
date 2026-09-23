@@ -9,6 +9,8 @@ from app.pipeline.roles import assign_roles
 from app.pipeline.priority import compute_priority_scores
 from app.pipeline.enrich_with_llm import enrich_evidence_with_llm
 from app.pipeline.export_csv import export_pipeline_csvs
+from app.pipeline.sensitivity import compute_threshold_sensitivity
+from app.pipeline.completeness import generate_completeness_report
 
 
 def run_pipeline(data_dir: Path, out_dir: Path, enable_llm: bool = False) -> dict:
@@ -50,7 +52,9 @@ def run_pipeline(data_dir: Path, out_dir: Path, enable_llm: bool = False) -> dic
     # 6. Export CSV files & resilience summary
     t0 = time.time()
     export_pipeline_csvs(df_prioritized, edges, out_dir, resilience_report=resilience_report)
-    print(f"[6/6] Exported CSVs to {out_dir} in {time.time() - t0:.2f}s")
+    compute_threshold_sensitivity(df_prioritized, out_dir)
+    generate_completeness_report(df_prioritized, edges, out_dir)
+    print(f"[6/6] Exported CSVs, role traces, sensitivity & data gaps to {out_dir} in {time.time() - t0:.2f}s")
 
     elapsed = time.time() - start_time
 
