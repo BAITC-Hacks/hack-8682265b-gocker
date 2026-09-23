@@ -13,9 +13,7 @@ import {
   ChevronUp,
   Loader2,
   SlidersHorizontal,
-<<<<<<< HEAD
   UploadCloud,
-=======
   HelpCircle,
   BarChart3,
   ClipboardList,
@@ -26,7 +24,6 @@ import {
   CheckCircle2,
   Sliders,
   ExternalLink,
->>>>>>> fe9a8092ffd03907489c298e489d4dd5b96745dc
 } from "lucide-react";
 import GraphView, { GraphNode, GraphEdge, ROLE_COLORS } from "@/components/GraphView";
 import PriorityTable from "@/components/PriorityTable";
@@ -62,7 +59,6 @@ export default function AnalystWorkspace() {
   const [searchGidInput, setSearchGidInput] = useState("");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-<<<<<<< HEAD
   const fetchDatasetStatus = async () => {
     try {
       const res = await fetch("/api/dataset/status");
@@ -72,7 +68,7 @@ export default function AnalystWorkspace() {
       }
     } catch {}
   };
-=======
+
   // Feature 2: Explain GID State
   const [explainGidInput, setExplainGidInput] = useState("");
   const [explainResult, setExplainResult] = useState<any | null>(null);
@@ -87,8 +83,6 @@ export default function AnalystWorkspace() {
   // Feature 4: Data Completeness & Next-Request State
   const [dataGaps, setDataGaps] = useState<any[] | null>(null);
   const [copiedGaps, setCopiedGaps] = useState<Record<number, boolean>>({});
-
->>>>>>> fe9a8092ffd03907489c298e489d4dd5b96745dc
 
   const fetchGraphData = async () => {
     setLoading(true);

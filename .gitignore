@@ -50,3 +50,4 @@ __pycache__/
 .venv/
 venv/
 data/custom/
+*.db
