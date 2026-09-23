@@ -31,7 +31,7 @@ Or trigger recomputation directly from the web interface using the **"Recompute"
 Roles are evaluated sequentially from top to bottom; the **first matching rule wins**:
 
 | Role | Priority Rule & Metric Thresholds | AML Interpretation |
-|---|---|---|
+| --- | --- | --- |
 | **`coordinator`** | • `betweenness` in top 5% of graph (`>= 0.000155`)<br>• AND (`is_seed = true` OR connects $\ge 2$ different clusters)<br>• AND `in_partners + out_partners >= 5` | Strategic bridges linking distinct subnetworks or seed operations. Core targets for disrupting network communication. |
 | **`consolidator`** | • `in_partners >= 8`<br>• AND (`pass_ratio` is undefined OR `pass_ratio < 0.3`) | Funnels funds from multiple sources into a single pooling account with minimal onward distribution (<30%). |
 | **`distributor`** | • `out_partners >= 15` | Disburses funds outward to wide groups of recipients (classic layering / smurfing dispatch node). |
@@ -40,6 +40,7 @@ Roles are evaluated sequentially from top to bottom; the **first matching rule w
 | **`peripheral`** | • All remaining accounts | Low-degree, low-volume background flow nodes. |
 
 ### Role Confidence (`role_score`)
+
 Each node receives a normalized confidence score $[0.0, 1.0]$ measuring how far it exceeds the rule threshold (e.g. consolidators with 20 payers receive a higher score than those with 8). Hop-4 truncated terminal nodes receive an explicit penalty factor ($\times 0.6$).
 
 ---
@@ -51,6 +52,7 @@ Nodes are ranked for compliance review by `priority_score` $[0.0, 1.0]$:
 $$\text{priority\_score} = \text{clip}\Big(0.35 \cdot \text{norm}(bw) + 0.25 \cdot \text{norm}(pr) + 0.20 \cdot \text{norm}(in) + 0.10 \cdot \text{norm}(out) + 0.10 \cdot is\_seed, 0, 1\Big)$$
 
 Where:
+
 - $\text{norm}(x) = \frac{x - x_{min}}{x_{max} - x_{min}}$ across all nodes.
 - **Priority Multiplier**: Nodes classified as `coordinator` or `consolidator` receive a $1.15\times$ multiplier (clipped to 1.0) to elevate key operational actors in the investigation queue.
 
@@ -134,3 +136,7 @@ Processing transaction graphs at financial-institution scale (~1M to 100M nodes,
 - `data/output/nodes_roles.csv`: Exactly 2,248 rows with columns: `gid, role, role_score, cluster_id, priority_score, evidence, in_deg, out_deg, in_kzt, out_kzt, pagerank, pass_through, depth, is_seed, truncated_by_depth`.
 - `data/output/clusters.csv`: 82 clusters with columns: `cluster_id, n_nodes, n_seed, sum_kzt_internal, top_gids, hypothesis`.
 - `data/output/top_nodes.csv`: 50 highest priority nodes with columns: `rank, gid, role, priority_score, why`.
+
+---
+
+> **TODO**: substitute exact hex codes from the official Freedom Bank brand book prior to project submission if brand compliance is evaluated by the jury.

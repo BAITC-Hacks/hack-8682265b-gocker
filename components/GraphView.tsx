@@ -9,7 +9,7 @@ import {
   Layers,
   Filter,
   Eye,
-  Info,
+  AlertTriangle,
   X,
 } from "lucide-react";
 
@@ -32,6 +32,7 @@ export interface GraphNode {
   truncated_by_depth: boolean;
   x?: number;
   y?: number;
+  isBridge?: boolean;
 }
 
 export interface GraphEdge {
@@ -53,42 +54,43 @@ interface GraphViewProps {
   onSetRoleFilter: (role: string | null) => void;
   activeClusterFilter: number | null;
   onClearClusterFilter: () => void;
+  onOpenClusterExplorer: () => void;
 }
 
 export const ROLE_COLORS: Record<string, { bg: string; border: string; label: string; desc: string }> = {
   coordinator: {
-    bg: "#9333ea",
-    border: "#c084fc",
+    bg: "#7C5CFC",
+    border: "#9D84FD",
     label: "Coordinator",
     desc: "Key bridge account routing funds across multiple clusters",
   },
   consolidator: {
-    bg: "#f59e0b",
-    border: "#fde68a",
+    bg: "#E08A2E",
+    border: "#F3A95B",
     label: "Consolidator",
     desc: "Collects from 8+ sources with low forward distribution",
   },
   distributor: {
-    bg: "#06b6d4",
-    border: "#67e8f9",
+    bg: "#2E8FE0",
+    border: "#5DB0F7",
     label: "Distributor",
     desc: "Disburses funds outward to 15+ recipients",
   },
   transit: {
-    bg: "#10b981",
-    border: "#6ee7b7",
+    bg: "#2CA678",
+    border: "#4FD39E",
     label: "Transit",
     desc: "Pass-through intermediary (80–120% pass-through)",
   },
   terminal: {
-    bg: "#ef4444",
-    border: "#fca5a5",
+    bg: "#D14D4D",
+    border: "#E57777",
     label: "Terminal",
     desc: "Final endpoint account with 0 outgoing transfers",
   },
   peripheral: {
-    bg: "#64748b",
-    border: "#94a3b8",
+    bg: "#B8BCC2",
+    border: "#D1D5DB",
     label: "Peripheral",
     desc: "Low-volume background flow nodes",
   },
@@ -104,37 +106,144 @@ export default function GraphView({
   onSetRoleFilter,
   activeClusterFilter,
   onClearClusterFilter,
+  onOpenClusterExplorer,
 }: GraphViewProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
-  const [transform, setTransform] = useState({ x: 0, y: 0, k: 0.75 });
+  const [transform, setTransform] = useState({ x: 0, y: 0, k: 0.85 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [hoveredNode, setHoveredNode] = useState<GraphNode | null>(null);
   const [tooltipPos, setTooltipPos] = useState<{ x: number; y: number } | null>(null);
-  const [viewMode, setViewMode] = useState<"key_actors" | "full">("key_actors");
+  const [showFullWarning, setShowFullWarning] = useState(false);
+  const [viewMode, setViewMode] = useState<"cluster_subgraph" | "key_actors" | "full">(
+    activeClusterFilter !== null ? "cluster_subgraph" : "key_actors"
+  );
 
-  // Filter nodes based on view mode (Key actors vs full network)
+  useEffect(() => {
+    if (activeClusterFilter !== null) {
+      setViewMode("cluster_subgraph");
+    }
+  }, [activeClusterFilter]);
+
+  // Global node lookup map
+  const allNodesMap = useMemo(() => {
+    const map = new Map<number, GraphNode>();
+    for (const n of nodes) {
+      map.set(n.gid, n);
+    }
+    return map;
+  }, [nodes]);
+
+  // Adjacency graph for 1-hop lookups and bridge node discovery
+  const adjacency = useMemo(() => {
+    const adj = new Map<number, Set<number>>();
+    for (const e of edges) {
+      const u = Number(e.source);
+      const v = Number(e.target);
+      if (!adj.has(u)) adj.set(u, new Set());
+      if (!adj.has(v)) adj.set(v, new Set());
+      adj.get(u)!.add(v);
+      adj.get(v)!.add(u);
+    }
+    return adj;
+  }, [edges]);
+
+  // Determine which nodes to display
   const displayNodes = useMemo(() => {
-    if (viewMode === "full") return nodes;
+    if (nodes.length === 0) return [];
+
+    if (activeClusterFilter !== null) {
+      // Cluster Subgraph: cluster members + bridge neighbor nodes
+      const clusterGids = new Set<number>();
+      for (const n of nodes) {
+        if (n.cluster_id === activeClusterFilter) {
+          clusterGids.add(n.gid);
+        }
+      }
+
+      const bridgeGids = new Set<number>();
+      for (const gid of clusterGids) {
+        const neighbors = adjacency.get(gid);
+        if (neighbors) {
+          for (const nbr of neighbors) {
+            if (!clusterGids.has(nbr)) {
+              bridgeGids.add(nbr);
+            }
+          }
+        }
+      }
+
+      const result: GraphNode[] = [];
+      for (const gid of clusterGids) {
+        const n = allNodesMap.get(gid);
+        if (n) result.push({ ...n, isBridge: false });
+      }
+      for (const gid of bridgeGids) {
+        const n = allNodesMap.get(gid);
+        if (n) result.push({ ...n, isBridge: true });
+      }
+      return result;
+    }
+
+    if (viewMode === "full") {
+      return nodes;
+    }
+
+    // Key actors view: coordinators, consolidators, distributors, seeds, and high priority accounts
     return nodes.filter(
       (n) =>
         n.role === "coordinator" ||
         n.role === "consolidator" ||
         n.role === "distributor" ||
         n.is_seed ||
-        n.priority_score >= 0.2
+        n.priority_score >= 0.25
     );
-  }, [nodes, viewMode]);
+  }, [nodes, activeClusterFilter, viewMode, adjacency, allNodesMap]);
 
   const displayGidSet = useMemo(() => {
     return new Set(displayNodes.map((n) => n.gid));
   }, [displayNodes]);
 
-  // Position nodes by cluster layout
+  // Position nodes
   const positionedNodes = useMemo(() => {
     if (displayNodes.length === 0) return [];
 
+    if (activeClusterFilter !== null) {
+      // Focused layout: core cluster members in inner circle, bridge neighbors in outer orbit
+      const core = displayNodes.filter((n) => !n.isBridge);
+      const bridge = displayNodes.filter((n) => n.isBridge);
+
+      const result: GraphNode[] = [];
+      const coreN = core.length;
+      const coreRadius = Math.max(80, Math.min(260, 40 + Math.sqrt(coreN) * 32));
+
+      core.forEach((node, i) => {
+        // High priority nodes sit closer to center
+        const r = coreRadius * (0.3 + (1 - node.priority_score) * 0.7);
+        const angle = (i / Math.max(1, coreN)) * 2 * Math.PI;
+        result.push({
+          ...node,
+          x: r * Math.cos(angle),
+          y: r * Math.sin(angle),
+        });
+      });
+
+      const bridgeN = bridge.length;
+      const bridgeRadius = coreRadius + 140;
+      bridge.forEach((node, i) => {
+        const angle = (i / Math.max(1, bridgeN)) * 2 * Math.PI;
+        result.push({
+          ...node,
+          x: bridgeRadius * Math.cos(angle),
+          y: bridgeRadius * Math.sin(angle),
+        });
+      });
+
+      return result;
+    }
+
+    // Grid-clustered layout for multi-cluster views
     const clusterMap = new Map<number, GraphNode[]>();
     for (const node of displayNodes) {
       const c = node.cluster_id;
@@ -144,8 +253,8 @@ export default function GraphView({
 
     const clusters = Array.from(clusterMap.entries());
     const nClusters = clusters.length;
-    const gridCols = Math.ceil(Math.sqrt(nClusters * 1.5)) || 1;
-    const clusterSpacing = viewMode === "key_actors" ? 420 : 540;
+    const gridCols = Math.ceil(Math.sqrt(nClusters * 1.4)) || 1;
+    const clusterSpacing = viewMode === "key_actors" ? 440 : 560;
 
     const result: GraphNode[] = [];
 
@@ -161,7 +270,7 @@ export default function GraphView({
         cNodes[0].y = cy;
         result.push(cNodes[0]);
       } else {
-        const radius = Math.min(220, 30 + Math.sqrt(n) * 24);
+        const radius = Math.min(220, 32 + Math.sqrt(n) * 26);
         cNodes.forEach((node, i) => {
           const r = radius * (1 - Math.min(0.65, node.priority_score * 0.7));
           const angle = (i / n) * 2 * Math.PI;
@@ -173,7 +282,7 @@ export default function GraphView({
     });
 
     return result;
-  }, [displayNodes, viewMode]);
+  }, [displayNodes, activeClusterFilter, viewMode]);
 
   const nodeMap = useMemo(() => {
     const map = new Map<number, GraphNode>();
@@ -183,25 +292,27 @@ export default function GraphView({
     return map;
   }, [positionedNodes]);
 
-  // Adjacency
-  const adjacency = useMemo(() => {
-    const adj = new Map<number, Set<number>>();
+  // Edges connecting visible nodes
+  const visibleEdges = useMemo(() => {
+    const res: GraphEdge[] = [];
     for (const e of edges) {
       const u = Number(e.source);
       const v = Number(e.target);
-      if (!adj.has(u)) adj.set(u, new Set());
-      if (!adj.has(v)) adj.set(v, new Set());
-      adj.get(u)!.add(v);
-      adj.get(v)!.add(u);
+      if (displayGidSet.has(u) && displayGidSet.has(v)) {
+        res.push(e);
+      }
     }
-    return adj;
-  }, [edges]);
+    return res;
+  }, [edges, displayGidSet]);
 
+  // Active neighborhood for focus + context
   const activeNeighborhood = useMemo(() => {
     const set = new Set<number>();
-    if (selectedGid !== null) {
-      set.add(selectedGid);
-      const neighbors = adjacency.get(selectedGid);
+    const focalGid = selectedGid !== null ? selectedGid : hoveredNode ? hoveredNode.gid : null;
+
+    if (focalGid !== null) {
+      set.add(focalGid);
+      const neighbors = adjacency.get(focalGid);
       if (neighbors) {
         neighbors.forEach((nbr) => set.add(nbr));
       }
@@ -210,9 +321,9 @@ export default function GraphView({
       set.add(gid);
     }
     return set;
-  }, [selectedGid, highlightedGids, adjacency]);
+  }, [selectedGid, hoveredNode, highlightedGids, adjacency]);
 
-  // Center on selected node
+  // Center on selected node or initial center
   useEffect(() => {
     if (selectedGid !== null) {
       const target = nodeMap.get(selectedGid);
@@ -222,24 +333,23 @@ export default function GraphView({
         const width = canvas.clientWidth;
         const height = canvas.clientHeight;
         setTransform({
-          x: width / 2 - target.x * 1.3,
-          y: height / 2 - target.y * 1.3,
-          k: 1.3,
+          x: width / 2 - target.x * 1.2,
+          y: height / 2 - target.y * 1.2,
+          k: 1.2,
         });
+        return;
       }
     }
-  }, [selectedGid, nodeMap]);
 
-  // Initial center
-  useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const width = canvas.clientWidth;
     const height = canvas.clientHeight;
-    setTransform({ x: width / 2, y: height / 2, k: viewMode === "key_actors" ? 0.8 : 0.45 });
-  }, [viewMode]);
+    const initialK = activeClusterFilter !== null ? 1.0 : viewMode === "key_actors" ? 0.75 : 0.38;
+    setTransform({ x: width / 2, y: height / 2, k: initialK });
+  }, [selectedGid, activeClusterFilter, viewMode]);
 
-  // Render Loop
+  // Canvas Render
   const render = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -263,9 +373,10 @@ export default function GraphView({
     ctx.scale(transform.k, transform.k);
 
     const hasHighlight = activeNeighborhood.size > 0;
+    const focalGid = selectedGid !== null ? selectedGid : hoveredNode ? hoveredNode.gid : null;
 
-    // Draw Edges
-    for (const edge of edges) {
+    // 1. Draw Edges with Directional Arrows
+    for (const edge of visibleEdges) {
       const uId = Number(edge.source);
       const vId = Number(edge.target);
       const u = nodeMap.get(uId);
@@ -275,86 +386,90 @@ export default function GraphView({
         continue;
       }
 
-      if (activeClusterFilter !== null && u.cluster_id !== activeClusterFilter && v.cluster_id !== activeClusterFilter) {
-        continue;
-      }
-
       if (activeRoleFilter && u.role !== activeRoleFilter && v.role !== activeRoleFilter) {
         continue;
       }
 
-      const isConnectedToSelected = selectedGid !== null && (u.gid === selectedGid || v.gid === selectedGid);
+      const isConnectedToFocal = focalGid !== null && (u.gid === focalGid || v.gid === focalGid);
       const isNeighborEdge = hasHighlight && activeNeighborhood.has(u.gid) && activeNeighborhood.has(v.gid);
-      const logVol = Math.max(1, Math.min(5, Math.log10(Math.max(1000, edge.sum_kzt)) - 3));
+      
+      // Logarithmic thickness: min 1px, max 5.5px
+      const logVol = Math.max(1.0, Math.min(5.5, (Math.log10(Math.max(100, edge.sum_kzt)) - 3) * 0.9 + 1.2));
 
       ctx.beginPath();
       ctx.moveTo(u.x, u.y);
       ctx.lineTo(v.x, v.y);
 
-      if (isConnectedToSelected) {
-        ctx.strokeStyle = u.gid === selectedGid ? "#f59e0b" : "#38bdf8";
-        ctx.lineWidth = Math.max(2.2, logVol * 1.5) / transform.k;
+      if (isConnectedToFocal) {
+        // High contrast for direct flows: green for outgoing from focal, blue for incoming to focal
+        ctx.strokeStyle = u.gid === focalGid ? "#00A855" : "#2E8FE0";
+        ctx.lineWidth = Math.max(2.0, logVol * 1.4) / transform.k;
         ctx.globalAlpha = 0.95;
       } else if (isNeighborEdge) {
-        ctx.strokeStyle = "#94a3b8";
+        ctx.strokeStyle = "#94A3B8";
         ctx.lineWidth = Math.max(1.2, logVol) / transform.k;
-        ctx.globalAlpha = 0.7;
+        ctx.globalAlpha = 0.65;
       } else if (hasHighlight) {
-        ctx.strokeStyle = "#1e293b";
-        ctx.lineWidth = 0.5 / transform.k;
-        ctx.globalAlpha = 0.08;
+        // Dimmed non-neighbor edges to opacity 0.12 - 0.15
+        ctx.strokeStyle = "#94A3B8";
+        ctx.lineWidth = 0.8 / transform.k;
+        ctx.globalAlpha = 0.12;
       } else {
-        ctx.strokeStyle = "#334155";
-        ctx.lineWidth = Math.max(0.6, logVol * 0.7) / transform.k;
-        ctx.globalAlpha = 0.25;
+        // Default neutral semi-transparent edge
+        ctx.strokeStyle = "#64748B";
+        ctx.lineWidth = Math.max(0.9, logVol * 0.75) / transform.k;
+        ctx.globalAlpha = 0.38;
       }
 
       ctx.stroke();
 
-      // Flow arrows
-      if (isConnectedToSelected || (!hasHighlight && transform.k > 0.7)) {
-        const dx = v.x - u.x;
-        const dy = v.y - u.y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist > 25) {
-          const arrowDist = dist * 0.58;
-          const ax = u.x + (dx / dist) * arrowDist;
-          const ay = u.y + (dy / dist) * arrowDist;
-          const angle = Math.atan2(dy, dx);
-          const arrowSize = 6 / transform.k;
+      // Render directional arrow (u -> v)
+      const dx = v.x - u.x;
+      const dy = v.y - u.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
 
-          ctx.beginPath();
-          ctx.moveTo(ax, ay);
-          ctx.lineTo(
-            ax - arrowSize * Math.cos(angle - Math.PI / 6),
-            ay - arrowSize * Math.sin(angle - Math.PI / 6)
-          );
-          ctx.lineTo(
-            ax - arrowSize * Math.cos(angle + Math.PI / 6),
-            ay - arrowSize * Math.sin(angle + Math.PI / 6)
-          );
-          ctx.closePath();
-          ctx.fillStyle = ctx.strokeStyle;
-          ctx.fill();
-        }
+      // Only draw arrow if distance is sufficient
+      if (dist > 18) {
+        const uRadius = (4 + 12 * u.priority_score) / transform.k;
+        const vRadius = (4 + 12 * v.priority_score) / transform.k;
+        
+        // Place arrow slightly before target node boundary
+        const targetOffset = vRadius + 4 / transform.k;
+        const arrowDist = Math.max(dist * 0.45, dist - targetOffset);
+        const ax = u.x + (dx / dist) * arrowDist;
+        const ay = u.y + (dy / dist) * arrowDist;
+        const angle = Math.atan2(dy, dx);
+        const arrowSize = (isConnectedToFocal ? 7 : 5) / transform.k;
+
+        ctx.beginPath();
+        ctx.moveTo(ax, ay);
+        ctx.lineTo(
+          ax - arrowSize * Math.cos(angle - Math.PI / 6),
+          ay - arrowSize * Math.sin(angle - Math.PI / 6)
+        );
+        ctx.lineTo(
+          ax - arrowSize * Math.cos(angle + Math.PI / 6),
+          ay - arrowSize * Math.sin(angle + Math.PI / 6)
+        );
+        ctx.closePath();
+        ctx.fillStyle = ctx.strokeStyle;
+        ctx.fill();
       }
     }
 
-    // Draw Nodes
+    // 2. Draw Nodes
     for (const node of positionedNodes) {
       if (node.x === undefined || node.y === undefined) continue;
 
-      if (activeClusterFilter !== null && node.cluster_id !== activeClusterFilter) {
-        continue;
-      }
-
-      const isSelected = node.gid === selectedGid;
+      const isFocal = focalGid === node.gid;
       const isNeighbor = activeNeighborhood.has(node.gid);
       const isFiltered = activeRoleFilter !== null && node.role !== activeRoleFilter;
 
-      let radius = 3.5 + node.priority_score * 8;
-      if (node.is_seed) radius += 2.5;
-      if (isSelected) radius += 4;
+      // Radius derived from priority_score (min 4px, max 16px)
+      let radius = 4 + 12 * Math.max(0, Math.min(1, node.priority_score));
+      if (node.role === "peripheral") {
+        radius = 4;
+      }
 
       const color = ROLE_COLORS[node.role] || ROLE_COLORS.peripheral;
 
@@ -362,55 +477,75 @@ export default function GraphView({
       ctx.arc(node.x, node.y, radius / transform.k, 0, 2 * Math.PI);
 
       if (isFiltered) {
-        ctx.fillStyle = "#1e293b";
+        ctx.fillStyle = "#B8BCC2";
         ctx.globalAlpha = 0.08;
         ctx.fill();
         continue;
       }
 
-      if (isSelected) {
-        ctx.fillStyle = "#ffffff";
+      if (isFocal) {
+        // Selected / Hovered focal node: solid high-contrast fill with clean border ring
+        ctx.fillStyle = "#FFFFFF";
         ctx.globalAlpha = 1.0;
         ctx.fill();
 
-        ctx.lineWidth = 4 / transform.k;
-        ctx.strokeStyle = color.bg;
+        ctx.lineWidth = 3.5 / transform.k;
+        ctx.strokeStyle = "#00D26A";
         ctx.stroke();
 
         ctx.beginPath();
-        ctx.arc(node.x, node.y, (radius + 6) / transform.k, 0, 2 * Math.PI);
-        ctx.strokeStyle = "rgba(255, 255, 255, 0.4)";
-        ctx.lineWidth = 2 / transform.k;
+        ctx.arc(node.x, node.y, (radius + 4) / transform.k, 0, 2 * Math.PI);
+        ctx.strokeStyle = color.bg;
+        ctx.lineWidth = 1.5 / transform.k;
         ctx.stroke();
       } else if (isNeighbor) {
+        // 1-hop connections stay at full brightness
         ctx.fillStyle = color.bg;
-        ctx.globalAlpha = 1.0;
+        ctx.globalAlpha = 0.95;
         ctx.fill();
 
-        ctx.lineWidth = 2.5 / transform.k;
+        ctx.lineWidth = 2 / transform.k;
         ctx.strokeStyle = color.border;
         ctx.stroke();
       } else if (hasHighlight) {
+        // Dim all non-connected nodes to opacity: 0.12-0.18
         ctx.fillStyle = color.bg;
-        ctx.globalAlpha = 0.12;
+        ctx.globalAlpha = 0.14;
         ctx.fill();
       } else {
-        ctx.fillStyle = color.bg;
-        ctx.globalAlpha = 0.85;
-        ctx.fill();
+        // Default mode
+        if (node.role === "peripheral") {
+          // Peripheral nodes small, light gray, opacity: 0.4
+          ctx.fillStyle = "#B8BCC2";
+          ctx.globalAlpha = 0.4;
+          ctx.fill();
+        } else {
+          // Fill saturation/brightness based on role_score
+          const alpha = 0.5 + Math.min(0.5, node.role_score * 0.5);
+          ctx.fillStyle = color.bg;
+          ctx.globalAlpha = alpha;
+          ctx.fill();
 
-        if (node.priority_score > 0.3 || node.is_seed) {
-          ctx.lineWidth = 1.5 / transform.k;
-          ctx.strokeStyle = node.is_seed ? "#38bdf8" : color.border;
-          ctx.stroke();
+          if (node.priority_score > 0.35 || node.is_seed) {
+            ctx.lineWidth = 1.5 / transform.k;
+            ctx.strokeStyle = color.border;
+            ctx.stroke();
+          }
         }
       }
 
-      // Labels
-      if (isSelected || isNeighbor || (transform.k > 1.0 && node.priority_score > 0.35) || (viewMode === "key_actors" && transform.k > 0.6)) {
-        ctx.globalAlpha = isSelected ? 1.0 : 0.85;
-        ctx.font = `${Math.max(10, 11 / transform.k)}px sans-serif`;
-        ctx.fillStyle = isSelected ? "#f8fafc" : "#cbd5e1";
+      // 3. Node Labels
+      // Focus + context: direct connections (1-hop) labeled with neighbor GIDs
+      const shouldLabel =
+        isFocal ||
+        isNeighbor ||
+        (node.priority_score >= 0.5 && transform.k > 0.8) ||
+        (node.isBridge && activeClusterFilter !== null);
+
+      if (shouldLabel) {
+        ctx.globalAlpha = isFocal || isNeighbor ? 1.0 : 0.75;
+        ctx.font = `600 ${Math.max(10, 11 / transform.k)}px -apple-system, BlinkMacSystemFont, sans-serif`;
+        ctx.fillStyle = isFocal ? "#00D26A" : "#1E293B";
         const label = String(node.gid).slice(-6);
         ctx.fillText(label, node.x + (radius + 4) / transform.k, node.y + 4 / transform.k);
       }
@@ -419,14 +554,14 @@ export default function GraphView({
     ctx.restore();
   }, [
     transform,
-    edges,
+    visibleEdges,
     positionedNodes,
     nodeMap,
     selectedGid,
+    hoveredNode,
     activeNeighborhood,
     activeRoleFilter,
     activeClusterFilter,
-    viewMode,
   ]);
 
   useEffect(() => {
@@ -482,8 +617,8 @@ export default function GraphView({
         const dx = n.x - mouseX;
         const dy = n.y - mouseY;
         const dist = Math.sqrt(dx * dx + dy * dy);
-        const radius = (6 + n.priority_score * 8) / transform.k;
-        if (dist <= Math.max(radius, 14 / transform.k)) {
+        const radius = (4 + 12 * n.priority_score) / transform.k;
+        if (dist <= Math.max(radius, 12 / transform.k)) {
           found = n;
           break;
         }
@@ -515,8 +650,8 @@ export default function GraphView({
       const dx = n.x - mouseX;
       const dy = n.y - mouseY;
       const dist = Math.sqrt(dx * dx + dy * dy);
-      const radius = (6 + n.priority_score * 8) / transform.k;
-      if (dist <= Math.max(radius, 14 / transform.k)) {
+      const radius = (4 + 12 * n.priority_score) / transform.k;
+      if (dist <= Math.max(radius, 12 / transform.k)) {
         onSelectNode(n.gid);
         return;
       }
@@ -524,43 +659,68 @@ export default function GraphView({
   };
 
   return (
-    <div className="relative w-full h-full bg-[#080d19] overflow-hidden select-none">
-      {/* Top Banner Filter & View Mode Controls */}
+    <div className="relative w-full h-full bg-[var(--fb-bg)] overflow-hidden select-none">
+      {/* Subgraph Banner / Controls */}
       <div className="absolute top-4 left-4 right-16 flex flex-wrap items-center justify-between gap-3 z-10 pointer-events-none">
-        {/* View Mode Toggle */}
-        <div className="pointer-events-auto flex items-center p-1 rounded-xl bg-slate-900/90 backdrop-blur-md border border-slate-800 shadow-xl">
+        <div className="pointer-events-auto flex items-center gap-2">
+          {activeClusterFilter !== null ? (
+            <div className="flex items-center gap-2 p-1.5 px-3 rounded-xl fb-card bg-[var(--fb-surface)] border border-[var(--fb-border)] shadow-sm text-xs font-medium">
+              <span className="text-[var(--fb-text-secondary)]">Cluster View:</span>
+              <strong className="text-[var(--fb-text-primary)]">
+                Cluster #{activeClusterFilter} Subgraph ({displayNodes.length} nodes, {visibleEdges.length} edges)
+              </strong>
+              <button
+                onClick={onClearClusterFilter}
+                className="ml-2 p-1 rounded-md hover:bg-[var(--fb-border)] text-[var(--fb-text-secondary)] hover:text-[var(--fb-text-primary)]"
+                title="Exit Cluster Subgraph"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center p-1 rounded-xl fb-card bg-[var(--fb-surface)] border border-[var(--fb-border)] shadow-sm text-xs">
+              <button
+                onClick={() => setViewMode("key_actors")}
+                className={`px-3 py-1.5 font-semibold rounded-lg transition flex items-center gap-1.5 ${
+                  viewMode === "key_actors"
+                    ? "bg-[var(--fb-accent)] text-black shadow-xs"
+                    : "text-[var(--fb-text-secondary)] hover:text-[var(--fb-text-primary)]"
+                }`}
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                Key Actors ({nodes.filter((n) => n.role === "coordinator" || n.role === "consolidator" || n.role === "distributor" || n.is_seed).length})
+              </button>
+              <button
+                onClick={() => setShowFullWarning(true)}
+                className={`px-3 py-1.5 font-semibold rounded-lg transition flex items-center gap-1.5 ${
+                  viewMode === "full"
+                    ? "bg-[var(--fb-accent)] text-black shadow-xs"
+                    : "text-[var(--fb-text-secondary)] hover:text-[var(--fb-text-primary)]"
+                }`}
+              >
+                <Layers className="w-3.5 h-3.5" />
+                Show Entire Network ({nodes.length})
+              </button>
+            </div>
+          )}
+
           <button
-            onClick={() => setViewMode("key_actors")}
-            className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition flex items-center gap-1.5 ${
-              viewMode === "key_actors"
-                ? "bg-purple-600 text-white shadow-md"
-                : "text-slate-400 hover:text-slate-200"
-            }`}
+            onClick={onOpenClusterExplorer}
+            className="pointer-events-auto px-3 py-1.5 text-xs font-semibold rounded-xl fb-card bg-[var(--fb-surface)] border border-[var(--fb-border)] text-[var(--fb-text-primary)] hover:border-[var(--fb-accent)] transition flex items-center gap-1.5 shadow-sm"
           >
-            <Sparkles className="w-3.5 h-3.5" />
-            Key Actors Only ({nodes.filter((n) => n.role === "coordinator" || n.role === "consolidator" || n.role === "distributor" || n.is_seed).length})
-          </button>
-          <button
-            onClick={() => setViewMode("full")}
-            className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition flex items-center gap-1.5 ${
-              viewMode === "full"
-                ? "bg-cyan-600 text-white shadow-md"
-                : "text-slate-400 hover:text-slate-200"
-            }`}
-          >
-            <Layers className="w-3.5 h-3.5" />
-            Full Network ({nodes.length})
+            <Layers className="w-3.5 h-3.5 text-[var(--fb-accent-dark)]" />
+            Explore by Cluster Map
           </button>
         </div>
 
         {/* Role Quick Filters */}
-        <div className="pointer-events-auto hidden md:flex items-center gap-1.5 p-1 rounded-xl bg-slate-900/90 backdrop-blur-md border border-slate-800 shadow-xl text-xs">
+        <div className="pointer-events-auto hidden lg:flex items-center gap-1.5 p-1 rounded-xl fb-card bg-[var(--fb-surface)] border border-[var(--fb-border)] shadow-sm text-xs">
           <button
             onClick={() => onSetRoleFilter(null)}
             className={`px-2.5 py-1 rounded-lg transition font-medium ${
               activeRoleFilter === null
-                ? "bg-slate-800 text-white font-semibold"
-                : "text-slate-400 hover:text-slate-200"
+                ? "bg-[var(--fb-border)] text-[var(--fb-text-primary)] font-semibold"
+                : "text-[var(--fb-text-secondary)] hover:text-[var(--fb-text-primary)]"
             }`}
           >
             All Roles
@@ -571,67 +731,29 @@ export default function GraphView({
               onClick={() => onSetRoleFilter(activeRoleFilter === r ? null : r)}
               className={`px-2.5 py-1 rounded-lg transition font-medium flex items-center gap-1.5 ${
                 activeRoleFilter === r
-                  ? "bg-slate-800 text-white font-semibold ring-1 ring-slate-600"
-                  : "text-slate-400 hover:text-slate-200"
+                  ? "bg-[var(--fb-border)] text-[var(--fb-text-primary)] font-semibold"
+                  : "text-[var(--fb-text-secondary)] hover:text-[var(--fb-text-primary)]"
               }`}
             >
-              <span
-                className="w-2 h-2 rounded-full"
-                style={{ backgroundColor: c.bg }}
-              />
-              <span className="capitalize">{r}</span>
+              <span className="w-2 h-2 rounded-full" style={{ backgroundColor: c.bg }} />
+              {c.label}
             </button>
           ))}
         </div>
-
-        {/* Cluster Filter Badge (if focused from Cluster Explorer) */}
-        {activeClusterFilter !== null && (
-          <div className="pointer-events-auto flex items-center gap-2 px-3 py-1 rounded-xl bg-indigo-950/90 border border-indigo-700 text-indigo-200 text-xs shadow-xl">
-            <span>Focused on Cluster #{activeClusterFilter}</span>
-            <button
-              onClick={onClearClusterFilter}
-              className="p-0.5 rounded hover:bg-indigo-900 transition"
-              title="Clear Cluster Filter"
-            >
-              <X className="w-3.5 h-3.5" />
-            </button>
-          </div>
-        )}
       </div>
-
-      {/* Main Canvas */}
-      <canvas
-        ref={canvasRef}
-        className="w-full h-full cursor-grab active:cursor-grabbing"
-        onWheel={handleWheel}
-        onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
-        onClick={handleClick}
-      />
 
       {/* Floating Canvas Controls */}
       <div className="absolute top-4 right-4 flex flex-col gap-2 z-10">
         <button
-          onClick={() =>
-            setTransform((prev) => ({
-              ...prev,
-              k: Math.min(5.0, prev.k * 1.25),
-            }))
-          }
-          className="p-2.5 rounded-lg bg-slate-900/90 border border-slate-800 text-slate-200 hover:text-white hover:bg-slate-800 transition shadow-lg"
+          onClick={() => setTransform((prev) => ({ ...prev, k: Math.min(5.0, prev.k * 1.25) }))}
+          className="p-2 rounded-xl fb-card bg-[var(--fb-surface)] border border-[var(--fb-border)] text-[var(--fb-text-primary)] hover:bg-[var(--fb-border)] transition shadow-sm"
           title="Zoom In"
         >
           <ZoomIn className="w-4 h-4" />
         </button>
         <button
-          onClick={() =>
-            setTransform((prev) => ({
-              ...prev,
-              k: Math.max(0.15, prev.k * 0.8),
-            }))
-          }
-          className="p-2.5 rounded-lg bg-slate-900/90 border border-slate-800 text-slate-200 hover:text-white hover:bg-slate-800 transition shadow-lg"
+          onClick={() => setTransform((prev) => ({ ...prev, k: Math.max(0.15, prev.k * 0.8) }))}
+          className="p-2 rounded-xl fb-card bg-[var(--fb-surface)] border border-[var(--fb-border)] text-[var(--fb-text-primary)] hover:bg-[var(--fb-border)] transition shadow-sm"
           title="Zoom Out"
         >
           <ZoomOut className="w-4 h-4" />
@@ -643,73 +765,102 @@ export default function GraphView({
               setTransform({
                 x: canvas.clientWidth / 2,
                 y: canvas.clientHeight / 2,
-                k: viewMode === "key_actors" ? 0.8 : 0.45,
+                k: activeClusterFilter !== null ? 1.0 : 0.75,
               });
             }
           }}
-          className="p-2.5 rounded-lg bg-slate-900/90 border border-slate-800 text-slate-200 hover:text-white hover:bg-slate-800 transition shadow-lg"
+          className="p-2 rounded-xl fb-card bg-[var(--fb-surface)] border border-[var(--fb-border)] text-[var(--fb-text-primary)] hover:bg-[var(--fb-border)] transition shadow-sm"
           title="Reset View"
         >
           <RotateCcw className="w-4 h-4" />
         </button>
       </div>
 
-      {/* Legend & Help Box */}
-      <div className="absolute bottom-4 left-4 p-3 rounded-xl bg-slate-900/90 backdrop-blur-md border border-slate-800 text-xs shadow-xl z-10 max-w-sm">
-        <div className="flex items-center justify-between mb-2 text-slate-400 font-medium">
-          <span>ROLE LEGEND ({displayNodes.length} visible)</span>
-          <span className="text-[10px] text-slate-500">Scroll zoom • Drag pan</span>
-        </div>
-        <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
-          {Object.entries(ROLE_COLORS).map(([role, c]) => (
-            <div key={role} className="flex items-center gap-2 group cursor-pointer" onClick={() => onSetRoleFilter(activeRoleFilter === role ? null : role)}>
-              <span
-                className="w-2.5 h-2.5 rounded-full shrink-0"
-                style={{ backgroundColor: c.bg, border: `1px solid ${c.border}` }}
-              />
-              <span className="text-slate-300 capitalize truncate group-hover:text-white">
-                {c.label}
-              </span>
+      {/* Heavy Mode Warning Modal */}
+      {showFullWarning && (
+        <div className="absolute inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center z-40 p-4">
+          <div className="bg-[var(--fb-surface)] border border-[var(--fb-border)] rounded-2xl max-w-md w-full p-5 shadow-2xl space-y-4">
+            <div className="flex items-center gap-3 text-amber-500">
+              <AlertTriangle className="w-6 h-6 shrink-0" />
+              <h3 className="text-sm font-bold text-[var(--fb-text-primary)]">
+                Render Full Network (2,248 Nodes)?
+              </h3>
             </div>
-          ))}
+            <p className="text-xs text-[var(--fb-text-secondary)] leading-relaxed">
+              Rendering all 2,248 nodes and 3,119 edges across 82 clusters simultaneously is a heavy mode. Analysts typically achieve better clarity by exploring individual cluster subgraphs or prioritizing top candidates.
+            </p>
+            <div className="flex items-center justify-end gap-2 pt-2">
+              <button
+                onClick={() => setShowFullWarning(false)}
+                className="px-3.5 py-1.5 text-xs font-semibold rounded-lg hover:bg-[var(--fb-border)] text-[var(--fb-text-secondary)]"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  setViewMode("full");
+                  setShowFullWarning(false);
+                }}
+                className="px-4 py-1.5 text-xs font-semibold rounded-lg bg-[var(--fb-accent)] text-black hover:bg-[var(--fb-accent-dark)] transition"
+              >
+                Render Network Anyway
+              </button>
+            </div>
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* Hover Tooltip */}
+      {/* Main HTML5 Canvas */}
+      <canvas
+        ref={canvasRef}
+        className="w-full h-full cursor-grab active:cursor-grabbing"
+        onWheel={handleWheel}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onClick={handleClick}
+      />
+
+      {/* Node Tooltip on Hover */}
       {hoveredNode && tooltipPos && (
         <div
-          className="absolute pointer-events-none p-3.5 rounded-xl bg-slate-950/95 border border-slate-700/80 text-xs shadow-2xl z-30 transform -translate-x-1/2 -translate-y-full mb-3"
+          className="absolute pointer-events-none p-3 rounded-xl fb-card bg-[var(--fb-surface)] border border-[var(--fb-border)] text-xs shadow-xl z-20 transform -translate-x-1/2 -translate-y-full mb-3 max-w-xs"
           style={{ left: tooltipPos.x, top: tooltipPos.y }}
         >
-          <div className="flex items-center gap-2 mb-1.5">
-            <span
-              className="w-2.5 h-2.5 rounded-full"
-              style={{
-                backgroundColor: ROLE_COLORS[hoveredNode.role]?.bg || "#64748b",
-              }}
-            />
-            <span className="font-bold text-slate-100 font-mono">
+          <div className="flex items-center justify-between gap-3 mb-1">
+            <span className="font-mono font-bold text-[var(--fb-text-primary)]">
               GID: {hoveredNode.gid}
             </span>
-            <span className="px-1.5 py-0.2 rounded text-[10px] uppercase font-bold bg-slate-800 text-slate-300">
+            <span
+              className="px-1.5 py-0.5 rounded text-[10px] uppercase font-bold"
+              style={{
+                backgroundColor: `${ROLE_COLORS[hoveredNode.role]?.bg || "#94A3B8"}20`,
+                color: ROLE_COLORS[hoveredNode.role]?.bg || "#94A3B8",
+              }}
+            >
               {hoveredNode.role}
             </span>
           </div>
 
-          <div className="text-[11px] text-slate-300 space-y-1">
+          <div className="space-y-0.5 text-[var(--fb-text-secondary)] text-[11px]">
             <div>
               Priority Score:{" "}
-              <span className="text-amber-400 font-bold font-mono">
+              <strong className="text-[var(--fb-text-primary)] font-mono">
                 {hoveredNode.priority_score.toFixed(3)}
-              </span>
+              </strong>
             </div>
             <div>
-              Flow: <span className="text-emerald-400 font-mono">+{hoveredNode.in_kzt.toLocaleString()}</span> in /{" "}
-              <span className="text-cyan-400 font-mono">-{hoveredNode.out_kzt.toLocaleString()}</span> out
+              Cluster: <strong>#{hoveredNode.cluster_id}</strong>
+              {hoveredNode.isBridge && (
+                <span className="ml-1 text-[var(--fb-accent-dark)] font-semibold">(Bridge Node)</span>
+              )}
             </div>
-            <div className="text-slate-400 text-[10px] pt-1 border-t border-slate-800 line-clamp-2 max-w-xs">
-              {hoveredNode.evidence}
+            <div>
+              Direct Connections: <strong>{hoveredNode.in_deg + hoveredNode.out_deg}</strong>
             </div>
+          </div>
+          <div className="mt-1.5 pt-1.5 border-t border-[var(--fb-border)] text-[10px] text-[var(--fb-text-secondary)] italic line-clamp-2">
+            {hoveredNode.evidence}
           </div>
         </div>
       )}

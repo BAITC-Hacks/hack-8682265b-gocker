@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
-import { Bot, Send, Sparkles, ChevronDown, ChevronUp, Loader2, X, MessageSquare } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Bot, Send, Sparkles, Loader2, X } from "lucide-react";
 
 interface AssistantMessage {
   role: "user" | "assistant";
@@ -16,6 +16,7 @@ interface AssistantPanelProps {
   isOpen: boolean;
   onToggle: () => void;
   externalPrompt?: string | null;
+  onClearExternalPrompt?: () => void;
 }
 
 export default function AssistantPanel({
@@ -24,6 +25,8 @@ export default function AssistantPanel({
   selectedGid,
   isOpen,
   onToggle,
+  externalPrompt,
+  onClearExternalPrompt,
 }: AssistantPanelProps) {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -31,7 +34,7 @@ export default function AssistantPanel({
     {
       role: "assistant",
       content:
-        "👋 Welcome! I am your AML Graph Intelligence Assistant. You can ask me to analyze high-risk targets, explain cluster bridges, or evaluate specific accounts.",
+        "Welcome to Freedom Bank Graph Intelligence. Ask questions about flagged nodes, cluster bridges, or high-volume fund pooling.",
     },
   ]);
 
@@ -82,37 +85,44 @@ export default function AssistantPanel({
     }
   };
 
+  useEffect(() => {
+    if (externalPrompt) {
+      if (!isOpen) onToggle();
+      handleSend(externalPrompt);
+      onClearExternalPrompt?.();
+    }
+  }, [externalPrompt, isOpen, onToggle, onClearExternalPrompt]);
+
   return (
     <>
-      {/* Floating Trigger Button (Bottom-Right) */}
+      {/* Floating Trigger Button */}
       {!isOpen && (
         <button
           onClick={onToggle}
-          className="fixed bottom-6 right-6 py-2.5 px-4 rounded-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-medium text-xs shadow-2xl flex items-center gap-2.5 border border-purple-400/30 transition transform hover:scale-105 z-40"
+          className="fixed bottom-6 right-6 py-2.5 px-4 rounded-full bg-[var(--fb-accent)] hover:bg-[var(--fb-accent-dark)] text-black font-semibold text-xs shadow-lg flex items-center gap-2 transition z-30 cursor-pointer"
         >
-          <Bot className="w-4 h-4 text-purple-200" />
-          <span>Ask AML Assistant</span>
-          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+          <Bot className="w-4 h-4 text-black" />
+          <span>Ask AI Assistant</span>
         </button>
       )}
 
       {/* Expanded Chat Drawer */}
       {isOpen && (
-        <div className="fixed bottom-6 right-6 w-96 max-w-[calc(100vw-3rem)] h-[480px] flex flex-col rounded-2xl glass-panel bg-slate-950/95 border border-slate-700/80 shadow-2xl z-40 overflow-hidden text-xs">
+        <div className="fixed bottom-6 right-6 w-96 max-w-[calc(100vw-3rem)] h-[480px] flex flex-col rounded-2xl bg-[var(--fb-surface)] border border-[var(--fb-border)] shadow-2xl z-40 overflow-hidden text-xs text-[var(--fb-text-primary)]">
           {/* Header */}
-          <div className="p-3.5 border-b border-slate-800 bg-slate-900/80 flex items-center justify-between shrink-0">
+          <div className="p-3.5 border-b border-[var(--fb-border)] bg-[var(--fb-bg)] flex items-center justify-between shrink-0">
             <div className="flex items-center gap-2.5">
-              <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-purple-600 to-cyan-500 flex items-center justify-center text-white shadow-md">
+              <div className="w-7 h-7 rounded-lg bg-[var(--fb-accent)] flex items-center justify-center text-black font-bold">
                 <Bot className="w-4 h-4" />
               </div>
               <div>
-                <div className="font-bold text-slate-100 flex items-center gap-1.5">
+                <div className="font-bold text-[var(--fb-text-primary)] flex items-center gap-1.5">
                   AML AI Assistant
-                  <span className="text-[10px] font-normal px-1.5 py-0.2 rounded bg-purple-950 text-purple-300 border border-purple-800">
+                  <span className="text-[10px] font-normal px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-800 border border-emerald-300">
                     Online
                   </span>
                 </div>
-                <div className="text-[10px] text-slate-400">
+                <div className="text-[10px] text-[var(--fb-text-secondary)]">
                   Transaction & network investigator
                 </div>
               </div>
@@ -120,36 +130,36 @@ export default function AssistantPanel({
 
             <button
               onClick={onToggle}
-              className="p-1 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition"
+              className="p-1 rounded-lg hover:bg-[var(--fb-border)] text-[var(--fb-text-secondary)] hover:text-[var(--fb-text-primary)] transition"
             >
               <X className="w-4 h-4" />
             </button>
           </div>
 
           {/* Quick Prompt Chips */}
-          <div className="p-2.5 bg-slate-900/50 border-b border-slate-800/80 flex items-center gap-1.5 overflow-x-auto shrink-0 scrollbar-none">
+          <div className="p-2.5 bg-[var(--fb-surface)] border-b border-[var(--fb-border)] flex items-center gap-1.5 overflow-x-auto shrink-0">
             <button
               onClick={() => handleSend("Identify the top 5 highest priority targets for immediate AML review")}
-              className="px-2 py-1 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300 whitespace-nowrap text-[11px] flex items-center gap-1 transition"
+              className="px-2 py-1 rounded-md bg-[var(--fb-bg)] border border-[var(--fb-border)] hover:border-[var(--fb-accent-dark)] text-[var(--fb-text-primary)] whitespace-nowrap text-[11px] flex items-center gap-1 transition"
             >
-              <Sparkles className="w-3 h-3 text-amber-400" /> Top Targets
+              <Sparkles className="w-3 h-3 text-[var(--role-consolidator)]" /> Top Targets
             </button>
             <button
               onClick={() => handleSend("Explain the coordinator nodes bridging multiple clusters")}
-              className="px-2 py-1 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300 whitespace-nowrap text-[11px] flex items-center gap-1 transition"
+              className="px-2 py-1 rounded-md bg-[var(--fb-bg)] border border-[var(--fb-border)] hover:border-[var(--fb-accent-dark)] text-[var(--fb-text-primary)] whitespace-nowrap text-[11px] flex items-center gap-1 transition"
             >
-              <Sparkles className="w-3 h-3 text-purple-400" /> Coordinators
+              <Sparkles className="w-3 h-3 text-[var(--role-coordinator)]" /> Coordinators
             </button>
             <button
               onClick={() => handleSend("Find accounts acting as fund consolidators with low pass-through")}
-              className="px-2 py-1 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300 whitespace-nowrap text-[11px] flex items-center gap-1 transition"
+              className="px-2 py-1 rounded-md bg-[var(--fb-bg)] border border-[var(--fb-border)] hover:border-[var(--fb-accent-dark)] text-[var(--fb-text-primary)] whitespace-nowrap text-[11px] flex items-center gap-1 transition"
             >
-              <Sparkles className="w-3 h-3 text-cyan-400" /> Consolidators
+              <Sparkles className="w-3 h-3 text-[var(--role-distributor)]" /> Consolidators
             </button>
             {selectedGid && (
               <button
                 onClick={() => handleSend(`Analyze account GID ${selectedGid} and its direct money flow network`)}
-                className="px-2 py-1 rounded-md bg-purple-950 text-purple-200 border border-purple-800 whitespace-nowrap text-[11px] font-mono"
+                className="px-2 py-1 rounded-md bg-[var(--fb-accent)]/20 text-[var(--fb-accent-dark)] border border-[var(--fb-accent-dark)]/40 whitespace-nowrap text-[11px] font-mono font-semibold"
               >
                 Inspect #{String(selectedGid).slice(-6)}
               </button>
@@ -163,24 +173,24 @@ export default function AssistantPanel({
                 key={i}
                 className={`p-3 rounded-xl leading-relaxed ${
                   m.role === "user"
-                    ? "bg-slate-800/90 text-slate-100 ml-6 border border-slate-700/60"
-                    : "bg-slate-900/90 text-slate-200 mr-2 border border-slate-800/80"
+                    ? "bg-[var(--fb-accent)]/15 text-[var(--fb-text-primary)] ml-6 border border-[var(--fb-accent)]/30"
+                    : "bg-[var(--fb-bg)] text-[var(--fb-text-primary)] mr-2 border border-[var(--fb-border)]"
                 }`}
               >
-                <div className="text-[10px] font-bold text-slate-400 mb-1 flex items-center gap-1">
+                <div className="text-[10px] font-bold text-[var(--fb-text-secondary)] mb-1 flex items-center gap-1">
                   {m.role === "user" ? "Analyst" : "Assistant"}
                 </div>
                 <div className="whitespace-pre-wrap text-xs">{m.content}</div>
 
                 {/* Clickable GIDs */}
                 {m.mentioned_gids && m.mentioned_gids.length > 0 && (
-                  <div className="flex flex-wrap gap-1 mt-2.5 pt-2 border-t border-slate-800">
-                    <span className="text-[10px] text-slate-400 self-center">Focus Account:</span>
+                  <div className="flex flex-wrap gap-1 mt-2.5 pt-2 border-t border-[var(--fb-border)]">
+                    <span className="text-[10px] text-[var(--fb-text-secondary)] self-center">Focus Account:</span>
                     {m.mentioned_gids.map((gid) => (
                       <button
                         key={gid}
                         onClick={() => onSelectNode(gid)}
-                        className="px-1.5 py-0.5 rounded bg-cyan-950 text-cyan-300 border border-cyan-800 font-mono text-[10px] hover:bg-cyan-900 transition"
+                        className="px-1.5 py-0.5 rounded bg-[var(--fb-surface)] border border-[var(--fb-border)] font-mono text-[10px] text-[var(--fb-accent-dark)] font-semibold hover:border-[var(--fb-accent-dark)] transition"
                       >
                         GID {gid}
                       </button>
@@ -190,8 +200,8 @@ export default function AssistantPanel({
               </div>
             ))}
             {loading && (
-              <div className="flex items-center gap-2 text-slate-400 text-xs p-2">
-                <Loader2 className="w-4 h-4 animate-spin text-cyan-400" />
+              <div className="flex items-center gap-2 text-[var(--fb-text-secondary)] text-xs p-2">
+                <Loader2 className="w-4 h-4 animate-spin text-[var(--fb-accent-dark)]" />
                 Querying graph intelligence...
               </div>
             )}
@@ -203,7 +213,7 @@ export default function AssistantPanel({
               e.preventDefault();
               handleSend();
             }}
-            className="p-2.5 border-t border-slate-800 bg-slate-900/70 flex items-center gap-2 shrink-0"
+            className="p-2.5 border-t border-[var(--fb-border)] bg-[var(--fb-bg)] flex items-center gap-2 shrink-0"
           >
             <input
               type="text"
@@ -211,12 +221,12 @@ export default function AssistantPanel({
               value={input}
               onChange={(e) => setInput(e.target.value)}
               disabled={loading}
-              className="flex-1 px-3 py-1.5 text-xs bg-slate-950 border border-slate-700 rounded-lg text-slate-200 placeholder-slate-500 focus:outline-none focus:border-purple-500 transition"
+              className="flex-1 px-3 py-1.5 text-xs bg-[var(--fb-surface)] border border-[var(--fb-border)] rounded-lg text-[var(--fb-text-primary)] placeholder-[var(--fb-text-secondary)] focus:outline-none focus:border-[var(--fb-accent-dark)] transition"
             />
             <button
               type="submit"
               disabled={loading || !input.trim()}
-              className="p-2 rounded-lg bg-purple-600 hover:bg-purple-500 text-white disabled:opacity-40 transition"
+              className="p-2 rounded-lg bg-[var(--fb-accent)] hover:bg-[var(--fb-accent-dark)] text-black disabled:opacity-40 transition cursor-pointer"
             >
               <Send className="w-3.5 h-3.5" />
             </button>
