@@ -309,26 +309,26 @@ export default function ClusterBubbleMap({
       {/* Tooltip on Hover */}
       {hoveredBubble && tooltipPos && (
         <div
-          className="absolute pointer-events-none p-3.5 rounded-xl fb-card bg-[var(--fb-surface)] border border-[var(--fb-border)] text-xs shadow-xl z-30 transform -translate-x-1/2 -translate-y-full mb-3 w-80 max-w-[calc(100vw-2rem)] break-words"
+          className="absolute pointer-events-none p-3.5 rounded-xl fb-card bg-[var(--fb-surface)] border border-[var(--fb-border)] text-xs shadow-xl z-30 transform -translate-x-1/2 -translate-y-full mb-3 w-80 max-w-[calc(100vw-2rem)] whitespace-normal break-words"
           style={{
-            left: Math.max(170, Math.min((canvasRef.current?.clientWidth || 800) - 170, tooltipPos.x)),
-            top: tooltipPos.y,
+            left: Math.max(170, Math.min(tooltipPos.x, (canvasRef.current?.clientWidth || 800) - 170)),
+            top: Math.max(140, tooltipPos.y)
           }}
         >
-          <div className="flex items-center justify-between mb-1.5">
+          <div className="flex items-center justify-between mb-1.5 gap-2">
             <span className="font-bold text-[var(--fb-text-primary)] text-sm">
               Cluster #{hoveredBubble.cluster_id}
             </span>
             {hoveredBubble.n_seed > 0 ? (
-              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 shrink-0">
                 {hoveredBubble.n_seed} Seed Client{hoveredBubble.n_seed > 1 ? "s" : ""}
               </span>
             ) : (
-              <span className="text-[10px] text-[var(--fb-text-secondary)]">0 Seeds</span>
+              <span className="text-[10px] text-[var(--fb-text-secondary)] shrink-0">0 Seeds</span>
             )}
           </div>
 
-          <div className="space-y-1 text-[var(--fb-text-secondary)] text-xs mb-2">
+          <div className="space-y-1.5 text-[var(--fb-text-secondary)] text-xs mb-2">
             <div>
               Total Accounts: <strong className="text-[var(--fb-text-primary)]">{hoveredBubble.n_nodes}</strong>
             </div>
@@ -338,12 +338,12 @@ export default function ClusterBubbleMap({
                 {hoveredBubble.sum_kzt_internal.toLocaleString()} KZT
               </strong>
             </div>
-            <div className="text-[11px] pt-1.5 border-t border-[var(--fb-border)] text-[var(--fb-text-primary)] leading-relaxed break-words whitespace-normal">
+            <div className="text-[11px] pt-1.5 border-t border-[var(--fb-border)] text-[var(--fb-text-primary)] leading-relaxed break-words [overflow-wrap:anywhere]">
               {hoveredBubble.hypothesis.replace(/;/g, "; ")}
             </div>
           </div>
 
-          <div className="flex items-center gap-1 text-[11px] text-[var(--fb-accent-dark)] font-semibold pt-1 border-t border-[var(--fb-border)]">
+          <div className="flex items-center gap-1 text-[11px] text-[var(--fb-accent-dark)] font-semibold pt-1">
             <span>Click to explore subgraph</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </div>
