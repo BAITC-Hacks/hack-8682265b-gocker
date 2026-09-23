@@ -815,8 +815,8 @@ export default function GraphView({
               <button
                 onClick={() => setViewMode("key_actors")}
                 className={`px-3 py-1.5 font-semibold rounded-lg transition flex items-center gap-1.5 cursor-pointer ${viewMode === "key_actors"
-                    ? "bg-[var(--fb-accent)] text-black shadow-xs"
-                    : "text-[var(--fb-text-secondary)] hover:text-[var(--fb-text-primary)]"
+                  ? "bg-[var(--fb-accent)] text-black shadow-xs"
+                  : "text-[var(--fb-text-secondary)] hover:text-[var(--fb-text-primary)]"
                   }`}
               >
                 <Sparkles className="w-3.5 h-3.5" />
@@ -825,8 +825,8 @@ export default function GraphView({
               <button
                 onClick={() => setShowFullWarning(true)}
                 className={`px-3 py-1.5 font-semibold rounded-lg transition flex items-center gap-1.5 cursor-pointer ${viewMode === "full"
-                    ? "bg-[var(--fb-accent)] text-black shadow-xs"
-                    : "text-[var(--fb-text-secondary)] hover:text-[var(--fb-text-primary)]"
+                  ? "bg-[var(--fb-accent)] text-black shadow-xs"
+                  : "text-[var(--fb-text-secondary)] hover:text-[var(--fb-text-primary)]"
                   }`}
               >
                 <Layers className="w-3.5 h-3.5" />
@@ -840,8 +840,8 @@ export default function GraphView({
             <button
               onClick={() => setShowAllConnections(!showAllConnections)}
               className={`pointer-events-auto px-2.5 py-1.5 text-xs font-semibold rounded-xl border transition flex items-center gap-1.5 shadow-xs cursor-pointer ${showAllConnections
-                  ? "bg-amber-500/15 border-amber-500 text-amber-700 dark:text-amber-300"
-                  : "bg-[var(--fb-surface)] border-[var(--fb-border)] text-[var(--fb-text-secondary)] hover:text-[var(--fb-text-primary)]"
+                ? "bg-amber-500/15 border-amber-500 text-amber-700 dark:text-amber-300"
+                : "bg-[var(--fb-surface)] border-[var(--fb-border)] text-[var(--fb-text-secondary)] hover:text-[var(--fb-text-primary)]"
                 }`}
               title="Toggle between top 60% turnover flows and all connections"
             >
@@ -866,8 +866,8 @@ export default function GraphView({
           <button
             onClick={() => onSetRoleFilter(null)}
             className={`px-2.5 py-1 rounded-lg transition font-medium cursor-pointer ${activeRoleFilter === null
-                ? "bg-[var(--fb-border)] text-[var(--fb-text-primary)] font-semibold"
-                : "text-[var(--fb-text-secondary)] hover:text-[var(--fb-text-primary)]"
+              ? "bg-[var(--fb-border)] text-[var(--fb-text-primary)] font-semibold"
+              : "text-[var(--fb-text-secondary)] hover:text-[var(--fb-text-primary)]"
               }`}
           >
             All Roles
@@ -877,8 +877,8 @@ export default function GraphView({
               key={r}
               onClick={() => onSetRoleFilter(activeRoleFilter === r ? null : r)}
               className={`px-2.5 py-1 rounded-lg transition font-medium flex items-center gap-1.5 cursor-pointer ${activeRoleFilter === r
-                  ? "bg-[var(--fb-border)] text-[var(--fb-text-primary)] font-semibold"
-                  : "text-[var(--fb-text-secondary)] hover:text-[var(--fb-text-primary)]"
+                ? "bg-[var(--fb-border)] text-[var(--fb-text-primary)] font-semibold"
+                : "text-[var(--fb-text-secondary)] hover:text-[var(--fb-text-primary)]"
                 }`}
             >
               <span className="w-2 h-2 rounded-full" style={{ backgroundColor: c.bg }} />

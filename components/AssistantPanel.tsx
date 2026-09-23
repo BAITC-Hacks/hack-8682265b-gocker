@@ -107,10 +107,11 @@ export default function AssistantPanel({
       {!isOpen && (
         <button
           onClick={onToggle}
-          className="fixed bottom-6 right-6 py-2.5 px-4 rounded-full bg-[var(--fb-accent)] hover:bg-[var(--fb-accent-dark)] text-black font-semibold text-xs shadow-lg flex items-center gap-2 transition z-30 cursor-pointer"
+          title={t.assistant_btn}
+          aria-label={t.assistant_btn}
+          className="fixed bottom-6 left-1/2 -translate-x-1/2 w-12 h-12 rounded-full bg-[var(--fb-accent)] hover:bg-[var(--fb-accent-dark)] text-black shadow-lg hover:shadow-xl flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95 z-30 cursor-pointer border border-black/10"
         >
-          <Bot className="w-4 h-4 text-black" />
-          <span>{t.assistant_btn}</span>
+          <Bot className="w-5 h-5 text-black" />
         </button>
       )}
 
