@@ -1,12 +1,71 @@
 # Money Graph — AML Financial Flow Intelligence Platform
 
-Money Graph is an end-to-end AML (Anti-Money Laundering) transaction network reconstruction and role attribution platform. It ingests bank transaction exports (`edges.parquet`, `nodes.parquet`, `transactions.parquet`), builds a directed weighted graph, computes network centrality and community metrics, deterministically attributes roles to 2,248 accounts, ranks investigation targets by priority score, and presents an interactive visual dashboard with an embedded AML AI Assistant.
+<p align="center">
+  <img src="https://img.shields.io/badge/Next.js-16-black?style=for-the-badge&logo=next.js" alt="Next.js" />
+  <img src="https://img.shields.io/badge/Python-3.12-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python" />
+  <img src="https://img.shields.io/badge/FastAPI-0.115-009688?style=for-the-badge&logo=fastapi&logoColor=white" alt="FastAPI" />
+  <img src="https://img.shields.io/badge/Docker-Compose-2496ED?style=for-the-badge&logo=docker&logoColor=white" alt="Docker" />
+  <img src="https://img.shields.io/badge/PostgreSQL-16-4169E1?style=for-the-badge&logo=postgresql&logoColor=white" alt="PostgreSQL" />
+  <img src="https://img.shields.io/badge/Redis-7-DC382D?style=for-the-badge&logo=redis&logoColor=white" alt="Redis" />
+  <img src="https://img.shields.io/badge/Bilingual-EN%20%7C%20RU-blueviolet?style=for-the-badge" alt="Bilingual EN/RU" />
+</p>
+
+<p align="center">
+  <a href="#english">English</a> • <a href="#русский">Русский</a> • <a href="#screenshots--media--скриншоты-и-демо">Screenshots & Demo</a>
+</p>
+
+---
+
+## Screenshots & Media / Скриншоты и Демо
+
+> **Media Showcase Placeholder**
+> Add visual assets, UI walk-through screenshots, and screen recordings below.
+
+### Application Walkthrough Video
+<!-- VIDEO: Add demo video embed / link here -->
+<!-- Example: [![Money Graph Demo Video](https://img.shields.io/badge/Demo%20Video-Watch%20Now-red?style=for-the-badge&logo=youtube)](https://your-video-link.com) -->
+<div align="center">
+  <p><i>📹 [Video Demo Placeholder - Upload or link your 1-2 min video walk-through here]</i></p>
+</div>
+
+<br/>
+
+### Key Interface Screenshots
+
+| **Interactive Graph Visualizer** | **Priority Investigation Queue & Escalation** |
+|:---:|:---:|
+| <!-- SCREENSHOT: Graph Canvas View with Directed Flows and Roles --> <div align="center"><br/><i>🖼️ [Screenshot Placeholder: Canvas Graph View]</i><br/><br/></div> | <!-- SCREENSHOT: Priority Queue Table with Filter Badges and Status --> <div align="center"><br/><i>🖼️ [Screenshot Placeholder: Investigation Queue]</i><br/><br/></div> |
+
+| **Client Dossier & Counterparty Breakdown** | **Community Clusters & Sensitivity Tuning** |
+|:---:|:---:|
+| <!-- SCREENSHOT: NodeCard side panel showing inbound/outbound topology --> <div align="center"><br/><i>🖼️ [Screenshot Placeholder: Client Dossier Panel]</i><br/><br/></div> | <!-- SCREENSHOT: Cluster Bubble Map / Threshold Sensitivity Drawer --> <div align="center"><br/><i>🖼️ [Screenshot Placeholder: Clusters & Sensitivity]</i><br/><br/></div> |
+
+| **AI AML Assistant Drawer** | **Bilingual Support (Russian / English UI)** |
+|:---:|:---:|
+| <!-- SCREENSHOT: AI Assistant panel explaining laundering typologies --> <div align="center"><br/><i>🖼️ [Screenshot Placeholder: AI Assistant Chat]</i><br/><br/></div> | <!-- SCREENSHOT: Russian Language Mode Layout --> <div align="center"><br/><i>🖼️ [Screenshot Placeholder: Russian Language UI]</i><br/><br/></div> |
+
+---
+
+<a name="english"></a>
+# English
+
+## Overview
+**Money Graph** is an end-to-end financial transaction network reconstruction and role attribution platform built for financial crime investigation and compliance units. It processes multi-hop bank transaction exports (`edges.parquet`, `nodes.parquet`, `transactions.parquet`), builds a directed weighted graph, computes network centrality and community metrics, deterministically attributes roles to 2,248 accounts, ranks investigation targets by priority score, and presents an interactive visual dashboard with an embedded AML AI Assistant.
+
+### Key Capabilities
+- **6-Role Deterministic Attribution**: Coordinator, Consolidator, Distributor, Transit, Terminal, Peripheral with objective rule-tracing chains.
+- **Priority Investigation Queue & Case Escalation**: Triage target accounts, tag status (`unreviewed`, `escalated`, `cleared`), add analyst notes, and export official Law Enforcement Referral Dossiers (CSV & printable PDF).
+- **Interactive 60 FPS Canvas Graph**: GPU-friendly visualizer with directional arrows, volume-proportional edges, cluster coloring, and hop-neighborhood filtering.
+- **Threshold Sensitivity Analysis**: Adjust coordinator betweenness percentiles, consolidator fan-in, and distributor fan-out thresholds dynamically.
+- **Data Completeness & Limitation Audit**: Identifies 444 depth-4 boundary artifacts, cutoff constraints (5,000 KZT minimum), and outward-only tracing boundaries.
+- **AI AML Assistant**: Natural language querying over account topological signatures, rapid lookup by GID, and explanatory hypotheses with zero guilt assertions.
+- **Bilingual Interface**: Full English and Russian localization with instant toggle.
 
 ---
 
 ## Quick Start (Single Command)
 
-Start the entire platform (FastAPI backend + Next.js frontend + PostgreSQL + Redis):
+Spin up all services (Next.js frontend, FastAPI backend, PostgreSQL, Redis) via Docker Compose:
 
 ```bash
 docker compose up -d --build
@@ -14,74 +73,50 @@ docker compose up -d --build
 
 - **Frontend Dashboard**: [http://localhost:3000](http://localhost:3000)
 - **Backend API Docs (Swagger)**: [http://localhost:8000/docs](http://localhost:8000/docs)
-- **Pipeline Execution Time**: **~5.4 seconds** for the entire graph (2,248 nodes, 3,119 edges, betweenness centrality, PageRank, Louvain communities, role assignment, and CSV generation).
+- **Pipeline Speed**: **~1.5 – 5.0 seconds** for full network recalculation (2,248 nodes, 3,119 edges, betweenness centrality, PageRank, Louvain communities, role assignment, and CSV generation).
 
-To re-run the pipeline standalone:
+### Re-running the Pipeline
+
+Trigger a re-run from the UI with the **"Recompute"** button or via command line:
 
 ```bash
 docker compose exec backend python -m app.pipeline.run
 ```
 
-Or trigger recomputation directly from the web interface using the **"Recompute"** button.
-
-### Running Automated Tests
-
-Run the complete backend (21 tests) and frontend (18 tests) validation suites:
+### Running Test Suites
 
 ```bash
-# Backend test suite (data schemas, graph metrics, roles, APIs):
-backend/.venv/bin/python -m pytest backend/tests -v
-
-# Frontend test suite (proxy routes, role colors, filtering, UI logic):
+# Frontend test suite (Bun):
 bun test
+
+# Backend test suite (Pytest):
+backend/.venv/bin/python -m pytest backend/tests -v
 ```
 
 ---
 
-## Role Assignment Rules & Thresholds
+## Role Assignment Hierarchy
 
 Roles are evaluated sequentially from top to bottom; the **first matching rule wins**:
 
-| Role | Priority Rule & Metric Thresholds | AML Interpretation |
-| --- | --- | --- |
-| **`coordinator`** | • `betweenness` in top 5% of graph (`>= 0.000155`)<br>• AND (`is_seed = true` OR connects $\ge 2$ different clusters)<br>• AND `in_partners + out_partners >= 5` | Strategic bridges linking distinct subnetworks or seed operations. Core targets for disrupting network communication. |
+| Role | Priority Rule & Metric Thresholds | AML Operational Meaning |
+| :--- | :--- | :--- |
+| **`coordinator`** | • `betweenness` in top 5% of graph (`>= 0.000155`)<br>• AND (`is_seed = true` OR connects $\ge 2$ different clusters)<br>• AND `in_partners + out_partners >= 5` | Strategic bridges linking distinct subnetworks or seed operations. Core structural targets for disrupting the network. |
 | **`consolidator`** | • `in_partners >= 8`<br>• AND (`pass_ratio` is undefined OR `pass_ratio < 0.3`) | Funnels funds from multiple sources into a single pooling account with minimal onward distribution (<30%). |
 | **`distributor`** | • `out_partners >= 15` | Disburses funds outward to wide groups of recipients (classic layering / smurfing dispatch node). |
 | **`transit`** | • `0.8 <= pass_ratio <= 1.2`<br>• AND `in_partners >= 1` AND `out_partners >= 1` | Pass-through intermediary forwarding approximately 80–120% of received funds with minimal retention. |
 | **`terminal`** | • `out_partners == 0`<br>• Sub-rule: `depth < 4` (genuine sink)<br>• Sub-rule: `depth == 4` (flagged as `truncated_by_depth`, lower confidence) | Endpoint accounts. Differentiates genuine sinks from traversal boundary artifacts at hop 4. |
 | **`peripheral`** | • All remaining accounts | Low-degree, low-volume background flow nodes. |
 
-### Role Confidence (`role_score`)
-
-Each node receives a normalized confidence score $[0.0, 1.0]$ measuring how far it exceeds the rule threshold (e.g. consolidators with 20 payers receive a higher score than those with 8). Hop-4 truncated terminal nodes receive an explicit penalty factor ($\times 0.6$).
-
 ---
 
-## Priority Score Computation
-
-Nodes are ranked for compliance review by `priority_score` $[0.0, 1.0]$:
+## Priority Score Formula
 
 $$\text{priority\_score} = \text{clip}\Big(0.35 \cdot \text{norm}(bw) + 0.25 \cdot \text{norm}(pr) + 0.20 \cdot \text{norm}(in) + 0.10 \cdot \text{norm}(out) + 0.10 \cdot is\_seed, 0, 1\Big)$$
 
 Where:
-
 - $\text{norm}(x) = \frac{x - x_{min}}{x_{max} - x_{min}}$ across all nodes.
-- **Priority Multiplier**: Nodes classified as `coordinator` or `consolidator` receive a $1.15\times$ multiplier (clipped to 1.0) to elevate key operational actors in the investigation queue.
-
----
-
-## Data Quirks & Inherent Limitations
-
-1. **Hop-4 Traversal Truncation Artifact**:
-   444 nodes with `depth = 4` and `out_partners = 0` are artifacts of the graph traversal being capped at 4 hops outward from seed clients. They must not be conflated with confirmed final recipients. The platform tags them explicitly as `truncated_by_depth = true` with cautionary evidence: *"Possible final recipient (hop 4 truncated)... needs follow-up"*.
-2. **Outflow-Only Visibility**:
-   The dataset records outgoing transfers from sampled clients. Inflows originating from outside the sample are not captured, and seed clients' true historical inflows appear understated.
-3. **5,000 KZT Reporting Threshold**:
-   Transfers below 5,000 KZT were filtered out during source extraction. Consequently, micro-structuring / smurfing below this cutoff is invisible in the raw data.
-4. **16 Weakly Connected Components**:
-   The network consists of 16 distinct connected components (plus 19 isolated seed accounts without edges). Louvain clustering is performed independently per component to preserve modular structure.
-5. **Absence of PII / Demographic Attributes**:
-   The data contains zero client demographics (names, ages, jurisdictions). All roles and priority ranks are strictly derived from graph topology and flow metrics.
+- **Priority Multiplier**: Nodes classified as `coordinator` or `consolidator` receive a $1.15\times$ boost (clipped to 1.0) to elevate key operational actors in the investigation queue.
 
 ---
 
@@ -89,126 +124,122 @@ Where:
 
 ```mermaid
 flowchart LR
-    subgraph Data["1. Raw Data Layer"]
+    subgraph Data["1. Data Layer"]
         D1[("edges.parquet<br/>3,119 edges")]
         D2[("nodes.parquet<br/>2,248 nodes")]
         D3[("transactions.parquet<br/>4,840 txs")]
     end
 
-    subgraph Pipeline["2. Pipeline Engine (~4.8s)"]
+    subgraph Pipeline["2. Pipeline Engine"]
         direction TB
-        P1["Data Ingestion & Base Aggregations<br/>(load_data.py)"]
-        P2["NetworkX Graph & Centrality<br/>• Betweenness, PageRank<br/>• 82 Louvain Communities<br/>(build_graph.py, metrics.py)"]
-        P3["Advanced Flow Analytics<br/>• Temporal Turnaround (Δt)<br/>• Strongly Connected Cycles<br/>• Attack Resilience Simulation"]
-        P4["Deterministic Role & Priority Engine<br/>• 6 Vocabulary Roles<br/>• Cautious Evidence Strings (≤200 chars)<br/>(roles.py, priority.py)"]
+        P1["Data Ingestion & Base Aggregations"]
+        P2["NetworkX Graph & Centrality<br/>• Betweenness, PageRank<br/>• 82 Louvain Communities"]
+        P3["Advanced Flow Analytics<br/>• Temporal Turnaround (Δt)<br/>• Cycles & Structural Choke Points"]
+        P4["Deterministic Role & Priority Engine<br/>• 6 Vocabulary Roles<br/>• Cautious Evidence Strings (≤200 chars)"]
         P1 --> P2 --> P3 --> P4
     end
 
-    subgraph Outputs["3. Artifacts & Storage"]
-        O1[("nodes_roles.csv<br/>2,248 rows")]
-        O2[("clusters.csv<br/>82 clusters")]
-        O3[("top_nodes.csv<br/>50 ranked nodes")]
-        O4[("resilience.json<br/>attack degradation")]
+    subgraph Storage["3. Persistence & DB"]
+        S1[("PostgreSQL<br/>Case Reviews")]
+        S2[("Redis<br/>Pre-warmed Cache")]
+        S3[("CSV / Parquet<br/>nodes_roles, clusters, top_nodes")]
     end
 
-    subgraph Serving["4. Serving & UI Interface"]
-        API["FastAPI REST Backend<br/>/graph • /graph/node • /assistant"]
-        UI1["Investigation Queue<br/>(PriorityTable.tsx)"]
-        UI2["Community Bubble Map<br/>(ClusterBubbleMap.tsx)"]
-        UI3["Interactive Graph Canvas<br/>(GraphView.tsx)"]
-        UI4["Dossier & AI Assistant<br/>(NodeCard.tsx, AssistantPanel.tsx)"]
-        API --> UI1 & UI2 & UI3 & UI4
+    subgraph UI["4. Serving & Frontend"]
+        API["FastAPI Backend<br/>/graph • /reviews • /assistant • /upload"]
+        FE["Next.js 16 Web Dashboard<br/>• Canvas Graph & Priority Queue<br/>• Case Escalation & Referral Export<br/>• Sensitivity Panel & i18n EN/RU"]
+        API <--> FE
     end
 
     Data --> P1
-    P4 --> Outputs
-    Outputs --> API
-```
-
-### Advanced Flow Analytics & Novelty
-
-1. **Network Resilience & Attack Simulation**:
-   - Baseline: Giant component consists of **1,877 nodes** across 35 weakly connected components.
-   - Removing the top 5 coordinator bridge accounts causes the network to fragment into **129 isolated components** (reducing giant component by 8.5%).
-   - Removing the top 10 coordinator accounts fractures the network into **228 components** (reducing giant component by 16.5%), proving these nodes are vital structural choke points for AML interdiction.
-
-2. **Cycle & Return Flow Detection**:
-   - Identified **309 accounts** participating in circular transaction loops across 84 cyclic subgraphs (via strongly connected components), exposing layering topologies where funds circulate back towards seed operations.
-
-3. **Temporal Pass-Through Velocity**:
-   - Extracted $\Delta t$ turnaround intervals from `transactions.parquet`. **175 accounts** exhibit rapid pass-through behavior, receiving and forwarding funds within $\le 48$ hours.
-
-4. **Near-Cutoff Structuring Detection**:
-   - Flagged **170 accounts** where $\ge 60\%$ of transfers cluster tightly between 5,000 and 15,000 KZT just above the reporting threshold.
-
----
-
-## Codebase Structure
-
-```
-/data/
-  raw/                          -- edges.parquet, nodes.parquet, transactions.parquet
-  output/                       -- nodes_roles.csv, clusters.csv, top_nodes.csv, resilience.json
-/backend/
-  app/
-    main.py                     -- FastAPI application & CORS
-    pipeline/
-      load_data.py              -- Parquet loading, temporal turnaround & structuring
-      build_graph.py            -- nx.DiGraph construction
-      metrics.py                -- Centrality, PageRank, Louvain communities, cycles, resilience
-      roles.py                  -- Deterministic role classification & evidence
-      priority.py               -- Priority scoring & multipliers
-      enrich_with_llm.py        -- Optional NVIDIA NIM / OpenAI evidence polishing
-      export_csv.py             -- Generates CSV files and resilience report
-      run.py                    -- Pipeline entrypoint (python -m app.pipeline.run)
-    routers/
-      graph.py                  -- GET /graph, GET /graph/node/{gid}, GET /graph/top
-      pipeline.py               -- POST /pipeline/run
-      assistant.py              -- POST /assistant
-    llm_clients.py              -- OpenAI / NVIDIA NIM wrapper with fallback
-  Dockerfile                    -- Fast container using Astral uv
-/components/
-  GraphView.tsx                 -- 60 FPS HTML5 Canvas graph visualizer with directed arrows
-  PriorityTable.tsx             -- Ranked investigation queue with pattern badges
-  ClusterBubbleMap.tsx          -- Community bubble map sized by internal turnover
-  NodeCard.tsx                  -- Persistent client dossier with flows & counterparty tables
-  AssistantPanel.tsx            -- Interactive AI Assistant chat drawer
-  OnboardingModal.tsx           -- 3-step first-visit guided walkthrough
-/app/
-  page.tsx                      -- Analyst workspace with collapsible Network Overview
-  api/[...path]/route.ts        -- Dynamic backend proxy route
-docker-compose.yaml             -- Multi-service orchestration
+    P4 --> Storage
+    Storage --> API
 ```
 
 ---
 
-## Scaling to ~1M Nodes
+<a name="русский"></a>
+# Русский
 
-Processing transaction graphs at financial-institution scale (~1M to 100M nodes, billions of edges) requires transitioning from single-node in-memory execution to streaming, partitioned architectures:
+## Обзор проекта
+**Money Graph** — это аналитическая платформа для реконструкции сетей финансовых транзакций, выявления схем отмывания денег (AML) и детерминированной атрибуции ролей участников. Система обрабатывает выгрузки банковских переводов (`edges.parquet`, `nodes.parquet`, `transactions.parquet`), строит направленный взвешенный граф, рассчитывает метрики центральности и сообществ, присваивает роли 2 248 аккаунтам, ранжирует цели расследования по шкале приоритета и предоставляет аналитику интерактивный дашборд с AI-ассистентом.
 
-1. **First-Order Metrics via Columnar Databases**:
-   - Replace in-memory Pandas aggregations with embedded columnar engines (DuckDB) or distributed SQL (ClickHouse, PostgreSQL with Citus).
-   - Degree counts, directional turnover (`sum_in`, `sum_out`), and pass-through ratios are calculated via parallel grouped queries operating out-of-core without loading full graphs into RAM.
-
-2. **Approximate & Sampled Centralities**:
-   - Exact betweenness centrality has $\mathcal{O}(V \cdot E)$ complexity, which is impractical for $10^6$ nodes.
-   - Employ randomized $k$-sample approximations (Brandes $k$-betweenness) or vertex-centric distributed algorithms using Apache Spark GraphX or cuGraph (GPU accelerated).
-   - PageRank scales linearly via iterative MapReduce or power iteration over sparse adjacency matrices.
-
-3. **Incremental Graph Maintenance**:
-   - Rather than executing full batch recalculations, maintain graph metrics incrementally using differential dataflows. When a new transaction arrives, update local node degrees and propagate changes strictly within a bounded neighborhood radius ($k \le 2$).
-
-4. **Persistent Distributed Graph Store**:
-   - Transition from flat CSV exports to specialized graph databases (Neo4j, AWS Neptune, or Memgraph) for real-time subgraph retrieval, neighborhood traversals, and analyst path-finding queries.
+### Ключевой функционал
+- **Детерминированная модель из 6 ролей**: Координатор (`coordinator`), Консолидатор (`consolidator`), Дистрибьютор (`distributor`), Транзитник (`transit`), Терминал (`terminal`), Периферия (`peripheral`) с прозрачной трассировкой правил.
+- **Очередь расследования и эскалация кейсов**: Маркировка статусов клиентов (`unreviewed`, `escalated`, `cleared`), ведение заметок комплаенс-офицера и выгрузка официальных досье для передачи в правоохранительные органы (CSV и печатный PDF).
+- **Интерактивный граф (Canvas 60 FPS)**: Оптимизированный рендеринг направленных потоков, толщина ребер пропорциональна объему (log-scale), кластеризация Louvain и фокус на подграфах.
+- **Анализ чувствительности порогов (Sensitivity)**: Динамическая подстройка процентилей посредничества (`betweenness`), порогов входящих потоков консолидатора и веера дистрибьютора.
+- **Аудит полноты данных и краевых эффектов**: Выявление 444 артефактов глубины графа (hop 4), ограничений выборки (отсечка от 5 000 KZT) и одностороннего направления транзакций.
+- **AI AML-ассистент**: Диалог на естественном языке, мгновенный поиск по GID, объяснение топологических паттернов без субъективных утверждений виновности.
+- **Двуязычный интерфейс**: Полная локализация интерфейса на русском и английском языках с переключением в 1 клик.
 
 ---
 
-## Generated CSV Outputs
+## Быстрый старт (Одна команда)
 
-- `data/output/nodes_roles.csv`: Exactly 2,248 rows with columns: `gid, role, role_score, cluster_id, priority_score, evidence, in_deg, out_deg, in_kzt, out_kzt, pagerank, pass_through, depth, is_seed, truncated_by_depth`.
-- `data/output/clusters.csv`: 82 clusters with columns: `cluster_id, n_nodes, n_seed, sum_kzt_internal, top_gids, hypothesis`.
-- `data/output/top_nodes.csv`: 50 highest priority nodes with columns: `rank, gid, role, priority_score, why`.
+Запуск всех сервисов (Next.js, FastAPI, PostgreSQL, Redis) в Docker-контейнерах:
+
+```bash
+docker compose up -d --build
+```
+
+- **Веб-интерфейс**: [http://localhost:3000](http://localhost:3000)
+- **Документация API (Swagger)**: [http://localhost:8000/docs](http://localhost:8000/docs)
+- **Время расчета графа**: **~1.5 – 5.0 секунд** для полной цепочки (2 248 вершин, 3 119 связей, расчет междуузлового посредничества, PageRank, сообществ Louvain, ролей и выгрузки CSV).
+
+### Пересчет пайплайна
+
+Пересчет доступен через кнопку **"Пересчитать"** в интерфейсе или через консоль:
+
+```bash
+docker compose exec backend python -m app.pipeline.run
+```
+
+### Запуск автотестов
+
+```bash
+# Тесты фронтенда (Bun):
+bun test
+
+# Тесты бэкенда (Pytest):
+backend/.venv/bin/python -m pytest backend/tests -v
+```
 
 ---
 
-> **TODO**: substitute exact hex codes from the official Freedom Bank brand book prior to project submission if brand compliance is evaluated by the jury.
+## Таблица правил назначения ролей
+
+Роли проверяются строго последовательно сверху вниз; **срабатывает первое совпавшее правило**:
+
+| Роль | Правило и пороговые значения метрик | AML-интерпретация |
+| :--- | :--- | :--- |
+| **`coordinator`** | • `betweenness` в топ-5% сети (`>= 0.000155`)<br>• И (`is_seed = true` ИЛИ соединяет $\ge 2$ разных кластеров)<br>• И `in_partners + out_partners >= 5` | Стратегические связующие звенья между кластерами или операциями семян. Ключевые цели для разрыва коммуникаций в сети. |
+| **`consolidator`** | • `in_partners >= 8`<br>• И (`pass_ratio` не определен ИЛИ `pass_ratio < 0.3`) | Аккумулирует средства от множества плательщиков с минимальным дальнейшим выводом (<30%). Касса сбора. |
+| **`distributor`** | • `out_partners >= 15` | Веерное распределение средств широкому кругу получателей (классический узел распыления / смурфинга). |
+| **`transit`** | • `0.8 <= pass_ratio <= 1.2`<br>• И `in_partners >= 1` И `out_partners >= 1` | Транзитный посредник, пересылающий ~80–120% полученных средств с минимальным удержанием. |
+| **`terminal`** | • `out_partners == 0`<br>• Подправило: `depth < 4` (конечный получатель)<br>• Подправило: `depth == 4` (помечен `truncated_by_depth`, сниженная уверенность) | Конечные точки. Отделяет реальные терминалы от артефактов обрезки графа на 4-м шаге. |
+| **`peripheral`** | • Все остальные аккаунты | Фоновые узлы с низкой активностью и низким объемом. |
+
+---
+
+## Ограничения данных и краевые эффекты
+
+1. **Артефакт обрезки 4-го шага (`depth = 4`)**:
+   444 счета имеют `depth = 4` и `out_partners = 0` только потому, что сбор данных был остановлен на 4-м шаге от семян. Они явно помечены флагом `truncated_by_depth = true` и получают пониженный коэффициент доверия ($\times 0.6$).
+2. **Однонаправленная видимость исходящих потоков**:
+   В выборку вошли только исходящие транзакции наблюдаемых клиентов. Поступления из внешних источников не зафиксированы.
+3. **Порог фильтрации 5 000 KZT**:
+   Переводы до 5 000 KZT отфильтрованы при первичной выгрузке, поэтому микроструктурирование ниже этой суммы не отражено в исходных данных.
+4. **16 компонент слабой связности**:
+   Сеть разбита на 16 независимых компонент связности. Кластеризация Louvain выполняется независимо для каждой компоненты.
+5. **Отсутствие персональных данных (PII)**:
+   Все выводы формируются исключительно на основе топологии графа и характеристик денежных потоков без презумпции виновности.
+
+---
+
+## Выходные артефакты
+
+- `data/output/nodes_roles.csv`: 2 248 строк с ролями, метриками и объективными свидетельствами.
+- `data/output/clusters.csv`: 82 кластера с гипотезами и внутренним оборотом.
+- `data/output/top_nodes.csv`: ранжированный список наиболее приоритетных целей для углубленной проверки.
+- `data/output/referral_dossier.csv`: экспортируемое досье эскалированных дел для правоохранительных органов.
