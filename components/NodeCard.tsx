@@ -81,6 +81,24 @@ export default function NodeCard({
                   Seed Account
                 </span>
               )}
+
+              {node.in_cycle && (
+                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-purple-100 text-purple-800 border border-purple-300" title="Account participates in circular money flow or return path">
+                  Circular Flow
+                </span>
+              )}
+
+              {node.rapid_transit && (
+                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-800 border border-blue-300" title={`Forwards funds within ${node.turnaround_hours ?? 48} hours`}>
+                  Rapid Transit {node.turnaround_hours !== null && node.turnaround_hours !== undefined ? `(${node.turnaround_hours}h)` : "(<48h)"}
+                </span>
+              )}
+
+              {node.structuring_risk && (
+                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-400" title="Frequent transactions clustered near 5,000 KZT cutoff">
+                  Structuring Pattern
+                </span>
+              )}
             </div>
 
             <div className="flex items-center gap-2 pt-1">

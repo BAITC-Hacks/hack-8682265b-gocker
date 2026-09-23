@@ -357,6 +357,65 @@ export default function AnalystWorkspace() {
                   </div>
                 </div>
               </div>
+
+              {/* Advanced Patterns */}
+              <div className="space-y-2 pt-2 border-t border-[var(--fb-border)]">
+                <span className="text-[10px] text-[var(--fb-text-secondary)] uppercase font-bold">
+                  Advanced Flow Patterns
+                </span>
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between p-2 rounded-lg bg-[var(--fb-bg)] border border-[var(--fb-border)]">
+                    <span className="text-purple-700 dark:text-purple-400 font-semibold">Circular Flow Loops</span>
+                    <strong className="font-mono text-[var(--fb-text-primary)]">
+                      {nodes.filter((n) => n.in_cycle).length}
+                    </strong>
+                  </div>
+                  <div className="flex items-center justify-between p-2 rounded-lg bg-[var(--fb-bg)] border border-[var(--fb-border)]">
+                    <span className="text-blue-700 dark:text-blue-400 font-semibold">Rapid Transit (&lt;48h)</span>
+                    <strong className="font-mono text-[var(--fb-text-primary)]">
+                      {nodes.filter((n) => n.rapid_transit).length}
+                    </strong>
+                  </div>
+                  <div className="flex items-center justify-between p-2 rounded-lg bg-[var(--fb-bg)] border border-[var(--fb-border)]">
+                    <span className="text-amber-700 dark:text-amber-400 font-semibold">Structuring Risk</span>
+                    <strong className="font-mono text-[var(--fb-text-primary)]">
+                      {nodes.filter((n) => n.structuring_risk).length}
+                    </strong>
+                  </div>
+                </div>
+              </div>
+
+              {/* Network Resilience Simulation */}
+              <div className="space-y-2 pt-2 border-t border-[var(--fb-border)]">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] text-[var(--fb-text-secondary)] uppercase font-bold">
+                    Resilience Simulation
+                  </span>
+                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-rose-100 text-rose-800">
+                    Attack Test
+                  </span>
+                </div>
+                <div className="p-2.5 rounded-xl bg-[var(--fb-bg)] border border-[var(--fb-border)] space-y-2 text-[11px]">
+                  <div>
+                    <span className="text-[var(--fb-text-secondary)]">Baseline Giant:</span>{" "}
+                    <strong className="text-[var(--fb-text-primary)] font-mono">1,877 nodes</strong> (35 components)
+                  </div>
+                  <div className="pt-1.5 border-t border-[var(--fb-border)]">
+                    <div className="text-[var(--fb-text-secondary)]">Remove Top 5 Coordinators:</div>
+                    <div className="flex justify-between font-semibold text-[var(--fb-text-primary)] mt-0.5">
+                      <span>Fragments into:</span>
+                      <span className="font-mono text-rose-600">129 components</span>
+                    </div>
+                  </div>
+                  <div className="pt-1.5 border-t border-[var(--fb-border)]">
+                    <div className="text-[var(--fb-text-secondary)]">Remove Top 10 Coordinators:</div>
+                    <div className="flex justify-between font-semibold text-[var(--fb-text-primary)] mt-0.5">
+                      <span>Fragments into:</span>
+                      <span className="font-mono text-rose-700">228 components</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </aside>
         )}

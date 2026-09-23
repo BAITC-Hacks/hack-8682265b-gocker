@@ -30,6 +30,10 @@ export interface GraphNode {
   depth: number;
   is_seed: boolean;
   truncated_by_depth: boolean;
+  in_cycle?: boolean;
+  rapid_transit?: boolean;
+  structuring_risk?: boolean;
+  turnaround_hours?: number | null;
   x?: number;
   y?: number;
   isBridge?: boolean;

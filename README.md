@@ -73,23 +73,81 @@ Where:
 
 ---
 
-## Architecture & Tech Stack
+## System Architecture
+
+```mermaid
+flowchart LR
+    subgraph Data["1. Raw Data Layer"]
+        D1[("edges.parquet<br/>3,119 edges")]
+        D2[("nodes.parquet<br/>2,248 nodes")]
+        D3[("transactions.parquet<br/>4,840 txs")]
+    end
+
+    subgraph Pipeline["2. Pipeline Engine (~4.8s)"]
+        direction TB
+        P1["Data Ingestion & Base Aggregations<br/>(load_data.py)"]
+        P2["NetworkX Graph & Centrality<br/>• Betweenness, PageRank<br/>• 82 Louvain Communities<br/>(build_graph.py, metrics.py)"]
+        P3["Advanced Flow Analytics<br/>• Temporal Turnaround (Δt)<br/>• Strongly Connected Cycles<br/>• Attack Resilience Simulation"]
+        P4["Deterministic Role & Priority Engine<br/>• 6 Vocabulary Roles<br/>• Cautious Evidence Strings (≤200 chars)<br/>(roles.py, priority.py)"]
+        P1 --> P2 --> P3 --> P4
+    end
+
+    subgraph Outputs["3. Artifacts & Storage"]
+        O1[("nodes_roles.csv<br/>2,248 rows")]
+        O2[("clusters.csv<br/>82 clusters")]
+        O3[("top_nodes.csv<br/>50 ranked nodes")]
+        O4[("resilience.json<br/>attack degradation")]
+    end
+
+    subgraph Serving["4. Serving & UI Interface"]
+        API["FastAPI REST Backend<br/>/graph • /graph/node • /assistant"]
+        UI1["Investigation Queue<br/>(PriorityTable.tsx)"]
+        UI2["Community Bubble Map<br/>(ClusterBubbleMap.tsx)"]
+        UI3["Interactive Graph Canvas<br/>(GraphView.tsx)"]
+        UI4["Dossier & AI Assistant<br/>(NodeCard.tsx, AssistantPanel.tsx)"]
+        API --> UI1 & UI2 & UI3 & UI4
+    end
+
+    Data --> P1
+    P4 --> Outputs
+    Outputs --> API
+```
+
+### Advanced Flow Analytics & Novelty
+
+1. **Network Resilience & Attack Simulation**:
+   - Baseline: Giant component consists of **1,877 nodes** across 35 weakly connected components.
+   - Removing the top 5 coordinator bridge accounts causes the network to fragment into **129 isolated components** (reducing giant component by 8.5%).
+   - Removing the top 10 coordinator accounts fractures the network into **228 components** (reducing giant component by 16.5%), proving these nodes are vital structural choke points for AML interdiction.
+
+2. **Cycle & Return Flow Detection**:
+   - Identified **309 accounts** participating in circular transaction loops across 84 cyclic subgraphs (via strongly connected components), exposing layering topologies where funds circulate back towards seed operations.
+
+3. **Temporal Pass-Through Velocity**:
+   - Extracted $\Delta t$ turnaround intervals from `transactions.parquet`. **175 accounts** exhibit rapid pass-through behavior, receiving and forwarding funds within $\le 48$ hours.
+
+4. **Near-Cutoff Structuring Detection**:
+   - Flagged **170 accounts** where $\ge 60\%$ of transfers cluster tightly between 5,000 and 15,000 KZT just above the reporting threshold.
+
+---
+
+## Codebase Structure
 
 ```
 /data/
   raw/                          -- edges.parquet, nodes.parquet, transactions.parquet
-  output/                       -- nodes_roles.csv, clusters.csv, top_nodes.csv
+  output/                       -- nodes_roles.csv, clusters.csv, top_nodes.csv, resilience.json
 /backend/
   app/
     main.py                     -- FastAPI application & CORS
     pipeline/
-      load_data.py              -- Parquet loading & aggregations
+      load_data.py              -- Parquet loading, temporal turnaround & structuring
       build_graph.py            -- nx.DiGraph construction
-      metrics.py                -- Centrality, PageRank, Louvain communities
+      metrics.py                -- Centrality, PageRank, Louvain communities, cycles, resilience
       roles.py                  -- Deterministic role classification & evidence
       priority.py               -- Priority scoring & multipliers
       enrich_with_llm.py        -- Optional NVIDIA NIM / OpenAI evidence polishing
-      export_csv.py             -- Generates the 3 standard CSV files
+      export_csv.py             -- Generates CSV files and resilience report
       run.py                    -- Pipeline entrypoint (python -m app.pipeline.run)
     routers/
       graph.py                  -- GET /graph, GET /graph/node/{gid}, GET /graph/top
@@ -98,12 +156,14 @@ Where:
     llm_clients.py              -- OpenAI / NVIDIA NIM wrapper with fallback
   Dockerfile                    -- Fast container using Astral uv
 /components/
-  GraphView.tsx                 -- 60 FPS HTML5 Canvas graph visualizer
-  TopList.tsx                   -- Filterable priority review table
-  NodeCard.tsx                  -- Detailed counterparty & flow inspector
+  GraphView.tsx                 -- 60 FPS HTML5 Canvas graph visualizer with directed arrows
+  PriorityTable.tsx             -- Ranked investigation queue with pattern badges
+  ClusterBubbleMap.tsx          -- Community bubble map sized by internal turnover
+  NodeCard.tsx                  -- Persistent client dossier with flows & counterparty tables
   AssistantPanel.tsx            -- Interactive AI Assistant chat drawer
+  OnboardingModal.tsx           -- 3-step first-visit guided walkthrough
 /app/
-  page.tsx                      -- Main analyst dashboard
+  page.tsx                      -- Analyst workspace with collapsible Network Overview
   api/[...path]/route.ts        -- Dynamic backend proxy route
 docker-compose.yaml             -- Multi-service orchestration
 ```

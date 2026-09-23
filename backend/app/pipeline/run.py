@@ -1,4 +1,5 @@
 import time
+import json
 import argparse
 from pathlib import Path
 from app.pipeline.load_data import load_parquet_data, compute_base_aggregations
@@ -21,18 +22,18 @@ def run_pipeline(data_dir: Path, out_dir: Path, enable_llm: bool = False) -> dic
     edges, nodes, tx = load_parquet_data(data_dir)
     print(f"[1/6] Loaded {len(nodes)} nodes, {len(edges)} edges, {len(tx)} txs in {time.time() - t0:.2f}s")
 
-    # 2. Base aggregations & Graph build
+    # 2. Base aggregations & Graph build (with temporal and structuring stats)
     t0 = time.time()
-    df_base = compute_base_aggregations(edges, nodes)
+    df_base = compute_base_aggregations(edges, nodes, tx)
     G = build_graph(edges, nodes)
     print(f"[2/6] Built graph ({G.number_of_nodes()} nodes, {G.number_of_edges()} edges) in {time.time() - t0:.2f}s")
 
-    # 3. Graph metrics
+    # 3. Graph metrics, cycles, & resilience simulation
     t0 = time.time()
-    df_metrics, cluster_map = compute_graph_metrics(G, df_base)
-    print(f"[3/6] Computed betweenness, pagerank & {df_metrics['cluster_id'].nunique()} clusters in {time.time() - t0:.2f}s")
+    df_metrics, cluster_map, resilience_report = compute_graph_metrics(G, df_base)
+    print(f"[3/6] Computed betweenness, pagerank, cycles & resilience in {time.time() - t0:.2f}s")
 
-    # 4. Roles
+    # 4. Roles (with temporal & cycle evidence)
     t0 = time.time()
     df_roles = assign_roles(df_metrics)
     print(f"[4/6] Assigned roles in {time.time() - t0:.2f}s")
@@ -46,24 +47,37 @@ def run_pipeline(data_dir: Path, out_dir: Path, enable_llm: bool = False) -> dic
         df_prioritized = enrich_evidence_with_llm(df_prioritized)
     print(f"[5/6] Computed priority scores in {time.time() - t0:.2f}s")
 
-    # 6. Export CSV files
+    # 6. Export CSV files & resilience summary
     t0 = time.time()
-    export_pipeline_csvs(df_prioritized, edges, out_dir)
+    export_pipeline_csvs(df_prioritized, edges, out_dir, resilience_report=resilience_report)
     print(f"[6/6] Exported CSVs to {out_dir} in {time.time() - t0:.2f}s")
 
     elapsed = time.time() - start_time
-    print("=" * 60)
-    print(f"PIPELINE COMPLETED SUCCESSFULLY IN {elapsed:.2f} SECONDS")
-    print("=" * 60)
 
-    return {
+    summary = {
         "status": "success",
         "elapsed_seconds": round(elapsed, 2),
         "nodes_count": len(df_prioritized),
         "edges_count": len(edges),
         "clusters_count": int(df_prioritized["cluster_id"].nunique()),
         "output_directory": str(out_dir),
+        "resilience": resilience_report,
+        "cycle_nodes_count": int(df_prioritized["in_cycle"].sum()) if "in_cycle" in df_prioritized.columns else 0,
+        "rapid_transit_count": int(df_prioritized["rapid_transit"].sum()) if "rapid_transit" in df_prioritized.columns else 0,
+        "structuring_risk_count": int(df_prioritized["structuring_risk"].sum()) if "structuring_risk" in df_prioritized.columns else 0,
     }
+
+    with open(out_dir / "summary.json", "w") as f:
+        json.dump(summary, f, indent=2)
+
+    print("=" * 60)
+    print(f"PIPELINE COMPLETED SUCCESSFULLY IN {elapsed:.2f} SECONDS")
+    print(f"Giant component: {resilience_report['initial_giant_component_nodes']} nodes")
+    print(f"Post top-5 coordinator removal: {resilience_report['post_top5_removal']['giant_component_nodes']} nodes "
+          f"(-{resilience_report['post_top5_removal']['giant_reduction_pct']}%)")
+    print("=" * 60)
+
+    return summary
 
 
 def main():

@@ -1,0 +1,46 @@
+{
+  "status": "success",
+  "elapsed_seconds": 6.25,
+  "nodes_count": 2248,
+  "edges_count": 3119,
+  "clusters_count": 82,
+  "output_directory": "/data/output",
+  "resilience": {
+    "initial_components": 35,
+    "initial_giant_component_nodes": 1877,
+    "cycle_participating_nodes_count": 309,
+    "cycle_clusters_count": 84,
+    "post_top5_removal": {
+      "top_5_removed_gids": [
+        100000008346837100,
+        100000003016635100,
+        100000006866783100,
+        100000005910114100,
+        100000008603629100
+      ],
+      "components_count": 129,
+      "giant_component_nodes": 1717,
+      "giant_reduction_pct": 8.5
+    },
+    "post_top10_removal": {
+      "top_10_removed_gids": [
+        100000008346837100,
+        100000003016635100,
+        100000006866783100,
+        100000005910114100,
+        100000008603629100,
+        100000000331309100,
+        100000002957787100,
+        100000005933757100,
+        100000008636603100,
+        100000004569484100
+      ],
+      "components_count": 228,
+      "giant_component_nodes": 1567,
+      "giant_reduction_pct": 16.5
+    }
+  },
+  "cycle_nodes_count": 309,
+  "rapid_transit_count": 175,
+  "structuring_risk_count": 170
+}

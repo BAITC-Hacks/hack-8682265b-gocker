@@ -203,6 +203,21 @@ export default function PriorityTable({
                           SEED
                         </span>
                       )}
+                      {n.in_cycle && (
+                        <span className="px-1.5 py-0.5 text-[9px] font-bold rounded bg-purple-100 text-purple-800 border border-purple-300" title="Circular flow / return cycle">
+                          CYCLE
+                        </span>
+                      )}
+                      {n.rapid_transit && (
+                        <span className="px-1.5 py-0.5 text-[9px] font-bold rounded bg-blue-100 text-blue-800 border border-blue-300" title="Rapid pass-through turnaround (<48h)">
+                          RAPID
+                        </span>
+                      )}
+                      {n.structuring_risk && (
+                        <span className="px-1.5 py-0.5 text-[9px] font-bold rounded bg-amber-100 text-amber-900 border border-amber-400" title="Structuring pattern near 5,000 KZT cutoff">
+                          STRUCT
+                        </span>
+                      )}
                     </div>
                   </td>
                   <td className="py-3 px-4">

@@ -27,14 +27,19 @@ def assign_roles(df: pd.DataFrame) -> pd.DataFrame:
         cross_cl = bool(r.cross_cluster)
         s_in = float(r.sum_in)
         s_out = float(r.sum_out)
+        in_cycle = getattr(r, "in_cycle", False)
+        rapid_transit = getattr(r, "rapid_transit", False)
+        structuring = getattr(r, "structuring_risk", False)
+        turnaround = getattr(r, "turnaround_hours", np.nan)
 
         # 1. coordinator
         if bw >= bw_thresh and (is_seed or cross_cl) and tot_deg >= COORDINATOR_MIN_DEGREE:
             role = "coordinator"
             score = min(1.0, 0.5 + 0.5 * (bw / max(bw_thresh, 1e-6)))
+            cycle_note = "; return cycle detected" if in_cycle else ""
             evidence = (
                 f"High betweenness ({bw:.4f}) bridging {tot_deg} counterparties across clusters. "
-                f"Volume: {s_in + s_out:,.0f} KZT."
+                f"Volume: {s_in + s_out:,.0f} KZT{cycle_note}."
             )
 
         # 2. consolidator
@@ -42,9 +47,10 @@ def assign_roles(df: pd.DataFrame) -> pd.DataFrame:
             role = "consolidator"
             score = min(1.0, in_p / (CONSOLIDATOR_MIN_IN * 2))
             pass_pct = f"{pass_r * 100:.0f}%" if not pd.isna(pass_r) else "0%"
+            smurf_note = "; near-threshold structuring" if structuring else ""
             evidence = (
                 f"Consolidates from {in_p} payers ({s_in:,.0f} KZT), forwards only {pass_pct} "
-                f"outward to {out_p} recipients."
+                f"outward to {out_p} recipients{smurf_note}."
             )
 
         # 3. distributor
@@ -61,9 +67,10 @@ def assign_roles(df: pd.DataFrame) -> pd.DataFrame:
             role = "transit"
             deviation = abs(pass_r - 1.0)
             score = max(0.5, 1.0 - (deviation / 0.2) * 0.5)
+            rapid_str = f" Rapid turnaround ({int(turnaround)}h)." if rapid_transit and not pd.isna(turnaround) else ""
             evidence = (
                 f"Receives from {in_p} payers ({s_in:,.0f} KZT), passes through {pass_r * 100:.0f}% "
-                f"({s_out:,.0f} KZT) to {out_p} accounts."
+                f"({s_out:,.0f} KZT) to {out_p} accounts.{rapid_str}"
             )
 
         # 5. terminal

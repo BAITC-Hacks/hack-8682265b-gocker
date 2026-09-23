@@ -1,4 +1,6 @@
+import json
 from pathlib import Path
+from typing import Optional, Dict, Any
 import pandas as pd
 
 
@@ -6,11 +8,12 @@ def export_pipeline_csvs(
     df: pd.DataFrame,
     edges: pd.DataFrame,
     out_dir: Path,
+    resilience_report: Optional[Dict[str, Any]] = None,
     top_n: int = 50
 ) -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    # 1. nodes_roles.csv
+    # 1. nodes_roles.csv (mandatory schema + optional enrichment attributes)
     nodes_roles = pd.DataFrame({
         "gid": df["gid"].astype(int),
         "role": df["role"].astype(str),
@@ -27,6 +30,10 @@ def export_pipeline_csvs(
         "depth": df["depth"].astype(int),
         "is_seed": df["is_seed"].astype(bool),
         "truncated_by_depth": df["truncated_by_depth"].astype(bool),
+        "in_cycle": df["in_cycle"].astype(bool) if "in_cycle" in df.columns else False,
+        "rapid_transit": df["rapid_transit"].astype(bool) if "rapid_transit" in df.columns else False,
+        "structuring_risk": df["structuring_risk"].astype(bool) if "structuring_risk" in df.columns else False,
+        "turnaround_hours": df["turnaround_hours"] if "turnaround_hours" in df.columns else None,
     })
     nodes_roles.to_csv(out_dir / "nodes_roles.csv", index=False)
 
@@ -80,3 +87,8 @@ def export_pipeline_csvs(
         })
 
     pd.DataFrame(top_rows).to_csv(out_dir / "top_nodes.csv", index=False)
+
+    # 4. Export resilience report
+    if resilience_report:
+        with open(out_dir / "resilience.json", "w") as f:
+            json.dump(resilience_report, f, indent=2)

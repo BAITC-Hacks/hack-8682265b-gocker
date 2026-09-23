@@ -1,4 +1,5 @@
 import os
+import json
 from pathlib import Path
 from typing import Optional, Dict, Any, List
 from fastapi import APIRouter, HTTPException
@@ -32,6 +33,7 @@ def load_graph_data_from_disk() -> Dict[str, Any]:
     nodes_csv = out_dir / "nodes_roles.csv"
     clusters_csv = out_dir / "clusters.csv"
     edges_parquet = raw_dir / "edges.parquet"
+    resilience_json = out_dir / "resilience.json"
 
     if not nodes_csv.exists() or not edges_parquet.exists():
         from app.pipeline.run import run_pipeline
@@ -41,10 +43,22 @@ def load_graph_data_from_disk() -> Dict[str, Any]:
     df_clusters = pd.read_csv(clusters_csv) if clusters_csv.exists() else pd.DataFrame()
     df_edges = pd.read_parquet(edges_parquet)
 
+    resilience_data = None
+    if resilience_json.exists():
+        try:
+            with open(resilience_json) as f:
+                resilience_data = json.load(f)
+        except Exception:
+            pass
+
     # Format nodes
     nodes: List[Dict[str, Any]] = []
     for r in df_nodes.itertuples(index=False):
         pass_through_val = None if pd.isna(r.pass_through) else float(r.pass_through)
+        turnaround_val = None
+        if hasattr(r, "turnaround_hours") and not pd.isna(r.turnaround_hours):
+            turnaround_val = round(float(r.turnaround_hours), 1)
+
         nodes.append({
             "id": str(r.gid),
             "gid": int(r.gid),
@@ -62,6 +76,10 @@ def load_graph_data_from_disk() -> Dict[str, Any]:
             "depth": int(r.depth),
             "is_seed": bool(r.is_seed),
             "truncated_by_depth": bool(r.truncated_by_depth),
+            "in_cycle": bool(getattr(r, "in_cycle", False)),
+            "rapid_transit": bool(getattr(r, "rapid_transit", False)),
+            "structuring_risk": bool(getattr(r, "structuring_risk", False)),
+            "turnaround_hours": turnaround_val,
         })
 
     # Format edges
@@ -105,6 +123,7 @@ def load_graph_data_from_disk() -> Dict[str, Any]:
             "total_volume_kzt": total_volume,
             "roles": role_counts,
             "clusters_count": len(clusters),
+            "resilience": resilience_data,
         }
     }
 
