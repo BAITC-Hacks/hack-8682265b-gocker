@@ -70,6 +70,7 @@ The platform ingests multi-hop bank transaction exports (`edges.parquet`, `nodes
 ## Complete Feature Matrix
 
 ### 1. Core Analytics & Graph Intelligence
+
 - **Deterministic 6-Role Taxonomy**: Sequential first-match-wins classification into `coordinator`, `consolidator`, `distributor`, `transit`, `terminal`, and `peripheral`.
 - **Composite Priority Score**: Mathematically combines betweenness centrality, PageRank, in/out degrees, seed indicators, and high-impact multipliers ($1.15\times$).
 - **Hop-4 Boundary Correction**: Distinguishes genuine terminal sinks from traversal truncation artifacts (444 boundary accounts) with a $0.6\times$ confidence penalty and explicit evidence flags.
@@ -80,6 +81,7 @@ The platform ingests multi-hop bank transaction exports (`edges.parquet`, `nodes
 - **Structuring & Smurfing Pattern Alert**: Flags 170 accounts where $\ge 60\%$ of transfers cluster tightly within 5,000–15,000 KZT directly above the reporting cutoff.
 
 ### 2. Operational Investigation & Escalation Workflow
+
 - **Analyst Investigation Queue**: Filterable, sortable priority table with pattern badges (`Seed`, `Cycle`, `Rapid`, `Smurfing`, `Hop-4 Artifact`).
 - **PostgreSQL Case Review Persistence**: Tag accounts as `unreviewed`, `escalated`, or `cleared` with analyst notes and timestamps.
 - **Law Enforcement Referral Dossier Export**: Generate official formatted CSV exports and clean, printable PDF referral packets ready for judicial submission.
@@ -88,6 +90,7 @@ The platform ingests multi-hop bank transaction exports (`edges.parquet`, `nodes
 - **Custom Dataset Ingestion (BFS Multi-Hop)**: Upload arbitrary transaction CSVs with custom seed accounts, automatically deriving hop-depth and recalculating the entire graph.
 
 ### 3. Visual & Interactive Dashboard
+
 - **High-Performance Canvas Graph (60 FPS)**: HTML5 Canvas rendering of 2,248 nodes and 3,119 directed edges with zoom/pan, directional arrowheads, log-scaled volume edge thickness, and role-based chromatic coloring.
 - **Community Bubble Map**: Interactive packed bubble view of all 82 communities sized by internal KZT turnover.
 - **Client Dossier Panel (`NodeCard`)**: In-depth account overview with inbound/outbound counterparty breakdown, transaction volumes, depth badges, and quick escalation controls.
@@ -146,27 +149,35 @@ Roles are evaluated sequentially from top to bottom; the **first matching rule w
 
 ## Priority Score Formula
 
-$$\text{priority\_score} = \text{clip}\Big(0.35 \cdot \text{norm}(bw) + 0.25 \cdot \text{norm}(pr) + 0.20 \cdot \text{norm}(in) + 0.10 \cdot \text{norm}(out) + 0.10 \cdot is\_seed, 0, 1\Big)$$
+$$
+priority\_score = \text{clip}\Big(0.35 \cdot \text{norm}(bw) + 0.25 \cdot \text{norm}(pr) + 0.20 \cdot \text{norm}(in) + 0.10 \cdot \text{norm}(out) + 0.10 \cdot is\_seed, 0, 1\Big)
+$$
 
 Where:
+
 - $\text{norm}(x) = \frac{x - x_{min}}{x_{max} - x_{min}}$ across all nodes.
 - **Priority Multiplier**: Nodes classified as `coordinator` or `consolidator` receive a $1.15\times$ boost (clipped to 1.0) to elevate key operational actors in the investigation queue.
 
 ---
 
 <a name="novel-research-analytics"></a>
+
 ## Advanced Research Analytics & Novelty
 
 ### 1. Network Resilience & Interdiction Simulation
+
 We simulated targeted interdiction attacks by systematically removing the highest-betweenness coordinator bridges:
+
 - **Baseline**: Giant component comprises **1,877 nodes** across 35 initial components.
 - **Top 5 Coordinator Removal**: The network shatters into **129 isolated components** (giant component shrinks by 8.5%).
 - **Top 10 Coordinator Removal**: The network fractures into **228 isolated fragments** (giant component collapses by 16.5%), proving that freezing just 10 accounts effectively paralyzes criminal coordination across the bank's sampled perimeter.
 
 ### 2. Cyclic Laundering Topology
+
 Identified **309 nodes** participating in circular flow structures across 84 cyclic components. Funds circulate through intermediaries and loop back toward seed-linked clusters, a hallmark of artificial turnover generation and layering.
 
 ### 3. Velocity Analysis & Rapid Pass-Through
+
 Analyzed transaction timestamps ($\Delta t$). Found **175 nodes** where median funds transit turnaround is under 48 hours, highlighting accounts functioning purely as electronic conduits.
 
 ---
@@ -233,6 +244,7 @@ flowchart LR
 ## Полная матрица возможностей
 
 ### 1. Графовая аналитика и алгоритмическое ядро
+
 - **Детерминированная модель из 6 ролей**: Последовательная классификация по принципу первого совпадения: координатор (`coordinator`), консолидатор (`consolidator`), дистрибьютор (`distributor`), транзитник (`transit`), терминал (`terminal`) и периферия (`peripheral`).
 - **Композитный скоринг приоритета**: Расчет приоритета на основе междуузлового посредничества (`betweenness`), PageRank, входящей/исходящей степени, признака семени и повышающих коэффициентов ($1.15\times$).
 - **Коррекция краевого артефакта 4-го шага**: Четкое разделение реальных терминалов и артефактов глубины графа (444 аккаунта на 4-м шаге) со штрафным коэффициентом $0.6\times$ и явной пометкой в обосновании.
@@ -243,6 +255,7 @@ flowchart LR
 - **Выявление смурфинга и дробления**: 170 аккаунтов, у которых $\ge 60\%$ операций сконцентрированы в диапазоне 5 000–15 000 KZT чуть выше порога обязательного контроля.
 
 ### 2. Рабочее место аналитика и процесс эскалации
+
 - **Очередь расследования (Investigation Queue)**: Таблица с фильтрацией, сортировкой и бейджами типологий (`Seed`, `Cycle`, `Rapid`, `Smurfing`, `Hop-4 Artifact`).
 - **Сохранение статусов в PostgreSQL**: Маркировка аккаунтов (`unreviewed`, `escalated`, `cleared`) с сохранением заметок аналитика и времени проверки.
 - **Выгрузка досье для правоохранительных органов**: Генерация официального CSV-файла и аккуратного печатного PDF-досье по эскалированным фигурантам.
@@ -251,6 +264,7 @@ flowchart LR
 - **Загрузка пользовательских датасетов (BFS Ingestion)**: Возможность загрузить собственный CSV-файл транзакций с указанием семян, с авторасчетом глубины графа и полным пересчетом метрик.
 
 ### 3. Интерактивный интерфейс
+
 - **Высокопроизводительный граф (Canvas 60 FPS)**: Отрисовка 2 248 вершин и 3 119 связей с масштабированием, направленными стрелками, логарифмической толщиной ребер и цветовой кодировкой ролей.
 - **Пузырьковая карта сообществ**: Визуализация 82 сообществ в виде упакованных пузырьков, масштабированных по внутреннему обороту в тенге.
 - **Карточка досье клиента (`NodeCard`)**: Полная аналитика по клиенту, детализация входящих и исходящих контрагентов, глубина и панель эскалации.
@@ -293,6 +307,7 @@ backend/.venv/bin/python -m pytest backend/tests -v
 ## Исследовательская аналитика: Моделирование устойчивости сети
 
 Мы смоделировали атаку на сеть путем удаления аккаунтов-координаторов с максимальным показателем междуузлового посредничества:
+
 - **Базовое состояние**: Гигантская компонента связности объединяет **1 877 вершин** в 35 начальных компонентах.
 - **Удаление топ-5 координаторов**: Сеть распадается на **129 изолированных компонент** (размер гигантской компоненты падает на 8.5%).
 - **Удаление топ-10 координаторов**: Сеть фрагментируется на **228 изолированных фрагментов** (размер гигантской компоненты сокращается на 16.5%).
